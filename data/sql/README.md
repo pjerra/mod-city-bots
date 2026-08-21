@@ -24,7 +24,8 @@ For normal installs, let the AzerothCore database updater apply `db-auth`,
 `db-characters` and `db-world`, and do not import those files manually
 afterward. `playerbots/updates` is never auto-applied: mod-playerbots updates
 `acore_playerbots` with its own loader, which does not scan other modules.
-Import that file by hand before the first worldserver start.
+Import that file by hand; `acore_playerbots` must already exist (worldserver
+has started once with mod-playerbots), then restart worldserver.
 
 The core updater runs auth, then characters, then world, and the playerbots
 database last. `db-characters` files must therefore be self-contained: no

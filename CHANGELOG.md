@@ -27,7 +27,16 @@ each change was needed. All fixes were found and verified on a live server
   of "preferred: auto-updater".
 - `2026_08_11_01_sync_citizen_roster_race_classes.sql` moved under `data/sql/dev`
   (existing-database repair; its roster values were already in the roster seed).
-- Startup log lines now name the shipped files instead of deleted ones.
+- Startup log lines now name the shipped files instead of deleted ones
+  (`src/CbShippedSql.h`); `conf/*.conf*` no longer point at a file that never
+  shipped; `tools/generate_stage_cast.py` now writes to `tools/out/` only.
+- Upgrading an existing server: the two new files run once and DELETE+INSERT
+  the 400 stage-cast `characters` rows, homebinds and starter outfits, so the
+  cast's saved positions, explored zones, taxi nodes and honor/kill counters
+  reset to the shipped state. A customized roster needs the dev re-sync
+  afterwards (README, Install step 4).
+- Not yet done for this change: a worldserver boot with mod-playerbots against
+  a freshly seeded database (verification was at the SQL/dump level).
 
 ## 2026-08 — the movement-hardening campaign
 

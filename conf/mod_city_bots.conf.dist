@@ -21,8 +21,9 @@ CitizenBots.LogMirrorToModule = 0
 #   afterward, on top of that normal population.
 # - Set worldserver PlayerLimit to at least MaxRandomBots + 400 (e.g. 1600 for
 #   1200 random bots + full stage-cast population).
-# - Stage-cast accounts must use playerbots account_type 3 (see SQL update
-#   2026_07_16_12). Do NOT mark them type 2 (AddClass) or playerbots will load
+# - Stage-cast accounts must use playerbots account_type 3 (seeded by
+#   data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql; re-import it to
+#   repair). Do NOT mark them type 2 (AddClass) or playerbots will load
 #   all 400 into the addclass cache and hammer acore_characters at startup.
 # - With one CharacterDatabase async worker (default), city logins wait for the
 #   queue to drain after random autologin. Increase CharacterDatabase.WorkerThreads

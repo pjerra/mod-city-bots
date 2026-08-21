@@ -5,15 +5,12 @@
 
 #include "AccountMgr.h"
 #include "CbLog.h"
+#include "CbShippedSql.h"
 #include "CharacterCache.h"
 #include "DatabaseEnv.h"
 #include "QueryResult.h"
 
 #include <string>
-
-// Shipped SQL files named in operator-facing log lines (paths under data/sql/).
-#define ROSTER_SQL "playerbots/updates/2026_07_15_00_citizen_roster.sql"
-#define CHARS_SQL "2026_08_22_00_stage_cast_characters.sql"
 
 namespace
 {
@@ -56,7 +53,7 @@ namespace CbCitizenAccountMgr
         if (!CitizenRosterRegistry::Instance().IsLoaded())
         {
             CbLog::Error("citizen_roster table empty or missing — the core updater never applies "
-                         "data/sql/playerbots; import " ROSTER_SQL " by hand, then restart");
+                         "data/sql/playerbots; import " CB_ROSTER_SQL " by hand, then restart");
             return;
         }
 
@@ -85,14 +82,14 @@ namespace CbCitizenAccountMgr
         if (rosterSize < STAGE_CAST_CAPACITY)
         {
             CbLog::Error("stage cast roster has {}/{} entries — re-import "
-                         ROSTER_SQL " then restart",
+                         CB_ROSTER_SQL " then restart",
                          rosterSize, STAGE_CAST_CAPACITY);
         }
 
         if (missingChars)
         {
             CbLog::Error("{} stage cast characters missing from acore_characters — "
-                         "run db-characters update " CHARS_SQL,
+                         "run db-characters update " CB_CHARS_SQL,
                          missingChars);
         }
 
@@ -100,8 +97,9 @@ namespace CbCitizenAccountMgr
         {
             CbLog::Error(
                 "{} stage-cast characters have account/name identity different from citizen_roster. "
-                "Player::LoadFromDB can reject or strand these logins. Apply db-characters update "
-                CHARS_SQL,
+                "Player::LoadFromDB can reject or strand these logins. Re-import " CB_ROSTER_SQL
+                " (shipped roster), or if your roster is intentionally customized apply "
+                CB_ROSTER_RESYNC_SQL " to acore_characters",
                 identityMismatches);
         }
 
@@ -116,7 +114,7 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Warn(
                     "{} stage-cast characters have non-zero at_login — can block bot login. "
-                    "Apply db-characters update " CHARS_SQL,
+                    "Re-apply " CB_CHARS_SQL " (re-seeds all 400 stage-cast characters)",
                     flagged);
             }
         }
@@ -134,7 +132,7 @@ namespace CbCitizenAccountMgr
                 CbLog::Error(
                     "{} stage-cast characters have names that fail core player-name validation. "
                     "Player::LoadFromDB rejects these before the bot reaches the world. "
-                    "Run db-characters update " CHARS_SQL,
+                    "Run db-characters update " CB_CHARS_SQL,
                     invalid);
             }
         }
@@ -151,7 +149,7 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Error(
                     "{} citizen_roster entries have invalid player names. "
-                    "Re-import " ROSTER_SQL,
+                    "Re-import " CB_ROSTER_SQL,
                     invalid);
             }
         }
@@ -169,7 +167,7 @@ namespace CbCitizenAccountMgr
                 CbLog::Error(
                     "{} stage-cast characters are missing character_homebind rows. "
                     "Player::LoadFromDB hard-fails at this boundary, causing the fixed 51-online cap. "
-                    "Run db-characters update " CHARS_SQL,
+                    "Run db-characters update " CB_CHARS_SQL,
                     missing);
             }
         }
@@ -221,7 +219,7 @@ namespace CbCitizenAccountMgr
                 CbLog::Error(
                     "{} stage-cast accounts have wrong playerbots account_type (need {}, not 2/AddClass) — "
                     "run on acore_playerbots: mysql -u acore -p acore_playerbots < "
-                    "modules/mod-city-bots/data/sql/" ROSTER_SQL,
+                    "modules/mod-city-bots/data/sql/" CB_ROSTER_SQL,
                     bad, CITIZEN_ACCOUNT_TYPE);
             }
         }

@@ -55,8 +55,10 @@ This is a playerbots extension, not a standalone NPC module.
    The AzerothCore database updater applies `db-auth`, `db-characters` and
    `db-world` on worldserver startup. It never applies `data/sql/playerbots`:
    mod-playerbots updates `acore_playerbots` with its own loader, which does not
-   scan other modules. Import the roster by hand once, before the first
-   worldserver start with the module:
+   scan other modules. Import the roster by hand once. `acore_playerbots` and
+   its base tables only exist after worldserver has started once with
+   mod-playerbots, so on a brand-new stack: start worldserver once (the module
+   logs `citizen_roster table empty or missing` and carries on), import, restart:
 
    ```bash
    mysql -u acore -p acore_playerbots < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql
@@ -84,9 +86,25 @@ This is a playerbots extension, not a standalone NPC module.
    ```
 
    Upgrading from an older checkout: the former `db-characters` update chain
-   (`2026_07_15_02` through `2026_08_11_01`) is folded into the two files above.
-   The updater applies them once and re-seeds the 400 stage-cast characters,
-   homebinds and starter outfits to the shipped state.
+   (`2026_07_15_02` through `2026_07_25_02`) is folded into the two files above;
+   `2026_08_11_01` moved to `data/sql/dev` as an existing-database repair. The
+   updater applies the two new files once. That is a full DELETE + INSERT of
+   the 400 stage-cast `characters` rows, homebinds and starter outfits back to
+   the shipped state: positions, explored zones, taxi nodes, honor/kill
+   counters and similar per-character state of the stage cast reset. If your
+   `citizen_roster` is customized (renamed bots, `data/sql/dev/playerbots`
+   patches), `characters` and the roster disagree afterwards and those bots
+   fail to log in; check with
+
+   ```sql
+   SELECT c.guid FROM acore_characters.characters c
+     JOIN acore_playerbots.citizen_roster r ON r.guid = c.guid
+    WHERE c.name <> r.character_name OR c.account <> r.account_id;
+   ```
+
+   and, if it returns rows, apply
+   `data/sql/dev/db-characters/updates/2026_07_17_12_sync_stage_cast_characters_to_roster.sql`
+   to `acore_characters`.
 
    Development-only SQL patches may exist under `data/sql/dev` in the working
    repository. They are only for existing test databases while iterating. Do not
@@ -234,7 +252,7 @@ changed and you know how your `updates` table tracks it.
 | Symptom or log | Likely fix |
 | --- | --- |
 | `city_bot_poi` does not exist | Apply all `db-world` SQL updates |
-| `citizen_roster table empty` | Apply all `playerbots` SQL updates |
+| `citizen_roster table empty or missing` | Import `data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql` into `acore_playerbots` by hand (never auto-applied), then restart |
 | `N stage cast characters missing` | Apply all `db-characters` SQL updates |
 | Citybot accounts cannot log in | Apply all `db-auth` SQL updates |
 | City bots start before random bots finish | Confirm current config has dedicated stage-cast mode and rebuild with this module |
@@ -246,11 +264,14 @@ changed and you know how your `updates` table tracks it.
 
 ## Development
 
-`tools/generate_stage_cast.py` is a developer helper for regenerating fixed
-roster SQL. The server does not run Python files from this module.
-
-Regenerating the roster can overwrite SQL assumptions, so do it deliberately and
-review all generated database updates before sharing them.
+`tools/generate_stage_cast.py` is the historical generator of the V2 identity
+data (accounts, roster, character skeleton). It writes to `tools/out/` only and
+does **not** produce the shipped seeds: `data/sql/db-characters/updates/*` are
+dumps of the final database state, and `data/sql/playerbots/updates/
+2026_07_15_00_citizen_roster.sql` has been edited by hand since. Never copy its
+output into `data/sql/*/updates` without re-running a fresh-install check (AC
+updater order: auth, characters, world, then playerbots by hand). The server
+does not run Python files from this module.
 
 ## TODO
 

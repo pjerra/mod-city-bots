@@ -1,6 +1,7 @@
 #include "CbPlayerbotsIntegration.h"
 
 #include "CbLog.h"
+#include "CbShippedSql.h"
 #include "CbPlayerbotHolderAccess.h"
 #include "CitizenRosterRegistry.h"
 #include "CharacterCache.h"
@@ -106,7 +107,7 @@ namespace CbPlayerbotsIntegration
                 {
                     detail = Acore::StringFormat(
                         "character identity mismatch (characters account/name {} '{}' vs citizen_roster {} '{}'); "
-                        "apply db-characters update 2026_08_22_00_stage_cast_characters.sql",
+                        "re-import " CB_ROSTER_SQL " or, for a customized roster, apply " CB_ROSTER_RESYNC_SQL,
                         accountId, characterName, entry->accountId, entry->name);
                     return StageCastLoginResult::Failed;
                 }
