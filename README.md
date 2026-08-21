@@ -52,35 +52,41 @@ This is a playerbots extension, not a standalone NPC module.
 
 4. Apply database updates.
 
-   Preferred: let the AzerothCore database updater apply module SQL on
-   worldserver startup. Do not also import those same files manually if you use
-   the auto-updater.
-
-   Manual install is also supported. Apply every file in each update directory
-   in filename order, to the matching database:
+   The AzerothCore database updater applies `db-auth`, `db-characters` and
+   `db-world` on worldserver startup. It never applies `data/sql/playerbots`:
+   mod-playerbots updates `acore_playerbots` with its own loader, which does not
+   scan other modules. Import the roster by hand once, before the first
+   worldserver start with the module:
 
    ```bash
+   mysql -u acore -p acore_playerbots < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql
+   ```
+
+   Everything else is applied automatically. The `db-characters` files are
+   self-contained (no reads from `acore_playerbots` or `acore_world`), so the
+   core's own order (auth, characters, world) works on a fresh database.
+
+   Fully manual install (updater disabled): apply every file in each directory
+   in filename order, to the matching database. Do not also import these files
+   manually if you use the auto-updater.
+
+   ```bash
+   mysql -u acore -p acore_playerbots < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql
+
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_13_01_city_bot_poi.sql
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_13_02_city_bot_ambiance.sql
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_15_05_playercreateinfo_human_undead_hunter.sql
 
    mysql -u acore -p acore_auth < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-auth/updates/2026_07_16_03_stage_cast_one_account_per_bot.sql
 
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_15_02_scale_stage_cast_400.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_15_04_fix_stage_cast_positions.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_16_05_expand_city_stage_targets.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_16_06_stage_cast_one_account_per_bot.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_16_07_cleanup_stage_cast_outfits_and_gate_positions.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_16_08_sync_stage_cast_race_classes.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_16_13_fix_stage_cast_login_rows.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_17_01_fix_stage_cast_required_login_rows.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_17_02_backfill_stage_cast_skills_reputation.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_17_03_fix_stage_cast_invalid_names.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_17_04_seed_stage_cast_basic_outfits.sql
-   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_07_17_05_cleanup_stage_cast_randomizer_side_effects.sql
-
-   mysql -u acore -p acore_playerbots < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql
+   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_00_stage_cast_characters.sql
+   mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_01_stage_cast_outfits.sql
    ```
+
+   Upgrading from an older checkout: the former `db-characters` update chain
+   (`2026_07_15_02` through `2026_08_11_01`) is folded into the two files above.
+   The updater applies them once and re-seeds the 400 stage-cast characters,
+   homebinds and starter outfits to the shipped state.
 
    Development-only SQL patches may exist under `data/sql/dev` in the working
    repository. They are only for existing test databases while iterating. Do not
@@ -207,11 +213,12 @@ The SQL is intentionally split by AzerothCore database:
 | Directory | Database | Purpose |
 | --- | --- | --- |
 | `data/sql/db-auth/updates` | `acore_auth` | Dedicated citybot accounts |
-| `data/sql/db-characters/updates` | `acore_characters` | Fixed characters, login rows, basic outfits |
+| `data/sql/db-characters/updates` | `acore_characters` | Fixed characters, homebinds, basic outfits (self-contained, auto-applied) |
 | `data/sql/db-world/updates` | `acore_world` | POIs, ambience data, player creation compatibility |
-| `data/sql/playerbots/updates` | `acore_playerbots` | `citizen_roster`, account type, playerbots integration flags |
+| `data/sql/playerbots/updates` | `acore_playerbots` | `citizen_roster`, account type, playerbots integration flags (manual import, never auto-applied) |
 
-For manual installs, apply files in filename order inside each directory.
+For manual installs, apply files in filename order inside each directory,
+databases in the order playerbots, world, auth, characters.
 
 ## Updating an Existing Install
 

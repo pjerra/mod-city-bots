@@ -20,11 +20,19 @@ an earlier module-owned seed, fold that final state back into the seed file and
 move any existing-database repair SQL under `dev/` instead of shipping a fixup
 chain.
 
-For normal installs, prefer the AzerothCore database updater and do not import
-the same update files manually afterward.
+For normal installs, let the AzerothCore database updater apply `db-auth`,
+`db-characters` and `db-world`, and do not import those files manually
+afterward. `playerbots/updates` is never auto-applied: mod-playerbots updates
+`acore_playerbots` with its own loader, which does not scan other modules.
+Import that file by hand before the first worldserver start.
 
-For manual installs, apply files in filename order within each directory. The
-top-level `README.md` includes exact `mysql` commands for the current shipped
-set.
+The core updater runs auth, then characters, then world, and the playerbots
+database last. `db-characters` files must therefore be self-contained: no
+reads from `acore_playerbots` or `acore_world`, or a fresh install fails with
+"table doesn't exist" before those databases are populated.
+
+For manual installs, apply files in filename order within each directory, and
+databases in the order playerbots, world, auth, characters. The top-level
+`README.md` includes exact `mysql` commands for the current shipped set.
 
 The `uninstall` folder is manual only and is not run by the database updater.

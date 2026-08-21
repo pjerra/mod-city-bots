@@ -11,6 +11,10 @@
 
 #include <string>
 
+// Shipped SQL files named in operator-facing log lines (paths under data/sql/).
+#define ROSTER_SQL "playerbots/updates/2026_07_15_00_citizen_roster.sql"
+#define CHARS_SQL "2026_08_22_00_stage_cast_characters.sql"
+
 namespace
 {
     bool _validated = false;
@@ -51,8 +55,8 @@ namespace CbCitizenAccountMgr
         CitizenRosterRegistry::Instance().LoadFromDatabase();
         if (!CitizenRosterRegistry::Instance().IsLoaded())
         {
-            CbLog::Error("citizen_roster table empty — apply V2 SQL updates "
-                         "(db-auth, db-characters, playerbots) then restart");
+            CbLog::Error("citizen_roster table empty or missing — the core updater never applies "
+                         "data/sql/playerbots; import " ROSTER_SQL " by hand, then restart");
             return;
         }
 
@@ -80,16 +84,15 @@ namespace CbCitizenAccountMgr
 
         if (rosterSize < STAGE_CAST_CAPACITY)
         {
-            CbLog::Error("stage cast roster has {}/{} entries — apply "
-                         "2026_07_15_02_scale_stage_cast_400.sql updates "
-                         "(auth, characters, playerbots) then restart",
+            CbLog::Error("stage cast roster has {}/{} entries — re-import "
+                         ROSTER_SQL " then restart",
                          rosterSize, STAGE_CAST_CAPACITY);
         }
 
         if (missingChars)
         {
             CbLog::Error("{} stage cast characters missing from acore_characters — "
-                         "run db-characters update 2026_07_15_02_scale_stage_cast_400.sql",
+                         "run db-characters update " CHARS_SQL,
                          missingChars);
         }
 
@@ -98,7 +101,7 @@ namespace CbCitizenAccountMgr
             CbLog::Error(
                 "{} stage-cast characters have account/name identity different from citizen_roster. "
                 "Player::LoadFromDB can reject or strand these logins. Apply db-characters update "
-                "2026_07_25_02_sync_stage_cast_identity_to_roster.sql",
+                CHARS_SQL,
                 identityMismatches);
         }
 
@@ -113,7 +116,7 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Warn(
                     "{} stage-cast characters have non-zero at_login — can block bot login. "
-                    "Apply db-characters update 2026_07_17_03_fix_stage_cast_invalid_names.sql",
+                    "Apply db-characters update " CHARS_SQL,
                     flagged);
             }
         }
@@ -131,7 +134,7 @@ namespace CbCitizenAccountMgr
                 CbLog::Error(
                     "{} stage-cast characters have names that fail core player-name validation. "
                     "Player::LoadFromDB rejects these before the bot reaches the world. "
-                    "Run db-characters update 2026_07_17_03_fix_stage_cast_invalid_names.sql",
+                    "Run db-characters update " CHARS_SQL,
                     invalid);
             }
         }
@@ -148,7 +151,7 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Error(
                     "{} citizen_roster entries have invalid player names. "
-                    "Run playerbots update 2026_07_17_03_fix_stage_cast_invalid_names.sql",
+                    "Re-import " ROSTER_SQL,
                     invalid);
             }
         }
@@ -166,7 +169,7 @@ namespace CbCitizenAccountMgr
                 CbLog::Error(
                     "{} stage-cast characters are missing character_homebind rows. "
                     "Player::LoadFromDB hard-fails at this boundary, causing the fixed 51-online cap. "
-                    "Run db-characters update 2026_07_17_01_fix_stage_cast_required_login_rows.sql",
+                    "Run db-characters update " CHARS_SQL,
                     missing);
             }
         }
@@ -183,9 +186,8 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Warn(
                     "{} stage-cast characters are missing character_skills rows. "
-                    "Core can regenerate default skills after a successful login, but "
-                    "applying the backfill keeps first login deterministic. "
-                    "Run db-characters update 2026_07_17_02_backfill_stage_cast_skills_reputation.sql",
+                    "Core regenerates default skills after a successful login; "
+                    "no action needed on a fresh install.",
                     missing);
             }
         }
@@ -202,7 +204,7 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Warn(
                     "{} stage-cast characters are missing character_reputation rows. "
-                    "Run db-characters update 2026_07_17_02_backfill_stage_cast_skills_reputation.sql",
+                    "Core regenerates them after a successful login; no action needed on a fresh install.",
                     missing);
             }
         }
@@ -218,10 +220,8 @@ namespace CbCitizenAccountMgr
             {
                 CbLog::Error(
                     "{} stage-cast accounts have wrong playerbots account_type (need {}, not 2/AddClass) — "
-                    "run on acore_playerbots: "
-                    "mysql -u acore -p acore_playerbots < "
-                    "modules/mod-city-bots/data/sql/playerbots/updates/"
-                    "2026_07_16_12_restore_stage_cast_account_type_3.sql",
+                    "run on acore_playerbots: mysql -u acore -p acore_playerbots < "
+                    "modules/mod-city-bots/data/sql/" ROSTER_SQL,
                     bad, CITIZEN_ACCOUNT_TYPE);
             }
         }

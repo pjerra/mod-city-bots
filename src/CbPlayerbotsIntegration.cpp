@@ -106,7 +106,7 @@ namespace CbPlayerbotsIntegration
                 {
                     detail = Acore::StringFormat(
                         "character identity mismatch (characters account/name {} '{}' vs citizen_roster {} '{}'); "
-                        "apply db-characters update 2026_07_25_02_sync_stage_cast_identity_to_roster.sql",
+                        "apply db-characters update 2026_08_22_00_stage_cast_characters.sql",
                         accountId, characterName, entry->accountId, entry->name);
                     return StageCastLoginResult::Failed;
                 }
