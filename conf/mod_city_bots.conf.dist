@@ -1,0 +1,190 @@
+#
+# mod-city-bots configuration
+#
+
+CitizenBots.Enable = 1
+
+# Logging:
+# - LogLevel 0 = errors only, 1 = warnings/errors, 2 = info/warnings/errors,
+#   3 = debug/info/warnings/errors.
+# - LogMirrorToModule = 0 logs only through the playerbots category. Set to 1
+#   only if you intentionally want the same city-bot lines mirrored to the
+#   module category too.
+CitizenBots.LogLevel = 2
+CitizenBots.LogMirrorToModule = 0
+
+# V2 stage-cast mode:
+# - 0% means "do not convert random leveling bots into city bots".
+# - Dedicated accounts are the fixed 400-character cast seeded by SQL
+#   (GUIDs 9000001-9000400, accounts citybot12001-citybot12400).
+# - Normal Playerbot.MinRandomBots/MaxRandomBots log in first. City bots log in
+#   afterward, on top of that normal population.
+# - Set worldserver PlayerLimit to at least MaxRandomBots + 400 (e.g. 1600 for
+#   1200 random bots + full stage-cast population).
+# - Stage-cast accounts must use playerbots account_type 3 (see SQL update
+#   2026_07_16_12). Do NOT mark them type 2 (AddClass) or playerbots will load
+#   all 400 into the addclass cache and hammer acore_characters at startup.
+# - With one CharacterDatabase async worker (default), city logins wait for the
+#   queue to drain after random autologin. Increase CharacterDatabase.WorkerThreads
+#   in worldserver.conf if stage cast still stalls under heavy random-bot load.
+CitizenBots.Percent = 0
+CitizenBots.UseDedicatedAccounts = 1
+
+# Online defaults with the values below:
+# - Always-on population: 400 city bots.
+# - Hybrid burst mode can be re-enabled below for a lower always-on baseline.
+# - All 400 roster GUIDs are assigned below, including 30 Dalaran citizens.
+
+# Hybrid population: set to 1 for a low always-on baseline that bursts to max
+# when a real player enters a regional hub. The default 0 keeps all configured
+# city bots online all the time.
+CitizenBots.HybridPopulation = 1
+CitizenBots.CountRealPlayers = 1
+CitizenBots.BurstGraceSec = 180
+
+# --- Alliance capitals (CityCount = default target; CityCount.Min = hybrid baseline) ---
+CitizenBots.CityCount.Stormwind = 76
+CitizenBots.CityCount.Min.Stormwind = 8
+CitizenBots.CityCount.Ironforge = 25
+CitizenBots.CityCount.Min.Ironforge = 3
+CitizenBots.CityCount.Darnassus = 20
+CitizenBots.CityCount.Min.Darnassus = 2
+CitizenBots.CityCount.Exodar = 10
+CitizenBots.CityCount.Min.Exodar = 2
+
+# --- Horde capitals ---
+CitizenBots.CityCount.Orgrimmar = 75
+CitizenBots.CityCount.Min.Orgrimmar = 8
+CitizenBots.CityCount.Undercity = 25
+CitizenBots.CityCount.Min.Undercity = 3
+CitizenBots.CityCount.ThunderBluff = 20
+CitizenBots.CityCount.Min.ThunderBluff = 2
+CitizenBots.CityCount.Silvermoon = 20
+CitizenBots.CityCount.Min.Silvermoon = 2
+
+# --- Fixed neutral hubs ---
+CitizenBots.CityCount.Shattrath = 20
+CitizenBots.CityCount.Dalaran = 30
+
+# --- Goldshire + gate duel hubs (gates always 22 dedicated duelists each) ---
+CitizenBots.CityCount.Goldshire = 35
+CitizenBots.CityCount.Min.Goldshire = 8
+CitizenBots.CityCount.StormwindGate = 22
+CitizenBots.CityCount.OrgrimmarGate = 22
+
+# Goldshire fixed roles are seeded in citizen_roster: 2 inn dancers, 2 duelers,
+# 4 plaza talkers. The remaining 27 Goldshire citizens are flex ambience.
+CitizenBots.Goldshire.MinInnDancers = 2
+CitizenBots.Goldshire.MinDuelers = 2
+CitizenBots.Goldshire.PlazaTalkers = 4
+
+# --- Explicit stage-cast assignment sheet ---
+#
+# These lists decide what each dedicated citybot GUID does. The database still
+# owns character identity, but these settings override home, role, POI rotation,
+# login priority, and whether the bot is static or burst-only.
+#
+# Static lists are always part of the city stage cast. *Burst lists only log in
+# when the existing hybrid population target for that location rises.
+# Duelers are intentionally static-only; do not put duelers in burst lists.
+#
+# Set CitizenBots.Assign.RequireListed = 0 to keep unlisted roster rows as their
+# database-defined fallback assignment. With the default 1, an unlisted citybot
+# does not log in.
+CitizenBots.Assign.RequireListed = 1
+
+CitizenBots.Assign.StormwindGate.Duelers = 9000001,9000002,9000003,9000004,9000005,9000006,9000007,9000008,9000009,9000010,9000011,9000012,9000351,9000352,9000353,9000354,9000355,9000356,9000357,9000358,9000359,9000360
+CitizenBots.Assign.OrgrimmarGate.Duelers = 9000013,9000014,9000015,9000016,9000017,9000018,9000019,9000020,9000021,9000022,9000023,9000024,9000261,9000262,9000263,9000264,9000265,9000266,9000267,9000268,9000269,9000270
+
+CitizenBots.Assign.Goldshire.InnDancers = 9000025,9000026
+CitizenBots.Assign.Goldshire.Duelers = 9000027,9000028
+CitizenBots.Assign.Goldshire.Talkers = 9000029,9000030,9000031,9000032
+CitizenBots.Assign.Goldshire.Fishers = 9000048,9000049
+CitizenBots.Assign.Goldshire.FishersBurst =
+CitizenBots.Assign.Goldshire.Ambient =
+CitizenBots.Assign.Goldshire.AmbientBurst = 9000033,9000034,9000035,9000036,9000037,9000038,9000039,9000040,9000041,9000042,9000043,9000044,9000045,9000046,9000047,9000231,9000232,9000233,9000234,9000235,9000236,9000237,9000238,9000239,9000240
+
+CitizenBots.Assign.Stormwind.Fishers = 9000050,9000051
+CitizenBots.Assign.Stormwind.FishersBurst =
+CitizenBots.Assign.Stormwind.Ambient = 9000052,9000053,9000054,9000055,9000056,9000057,9000058,9000059
+CitizenBots.Assign.Stormwind.AmbientBurst = 9000060,9000061,9000062,9000063,9000064,9000065,9000066,9000067,9000068,9000069,9000070,9000071,9000072,9000073,9000074,9000075,9000076,9000077,9000078,9000079,9000080,9000081,9000082,9000083,9000084,9000085,9000086,9000087,9000088,9000089,9000090,9000091,9000092,9000093,9000094,9000095,9000096,9000097,9000098,9000099,9000100,9000101,9000102,9000103,9000104,9000105,9000106,9000107
+CitizenBots.Assign.Stormwind.CrowdBurst = 9000108,9000109,9000110,9000111,9000112,9000113,9000114,9000115,9000116,9000117,9000118,9000119,9000120,9000121,9000122,9000123,9000124,9000125
+
+CitizenBots.Assign.Ironforge.Fishers = 9000271,9000272
+CitizenBots.Assign.Ironforge.FishersBurst =
+CitizenBots.Assign.Ironforge.Ambient = 9000273,9000274,9000275
+CitizenBots.Assign.Ironforge.AmbientBurst = 9000276,9000277,9000278,9000279,9000280,9000281,9000282,9000283,9000284,9000285,9000286,9000287,9000288,9000289,9000290,9000291,9000292,9000293,9000294,9000295
+
+CitizenBots.Assign.Darnassus.Ambient = 9000321,9000322
+CitizenBots.Assign.Darnassus.AmbientBurst = 9000323,9000324,9000325,9000326,9000327,9000328,9000329,9000330,9000331,9000332,9000333,9000334,9000335,9000336,9000337,9000338,9000339,9000340
+
+CitizenBots.Assign.Exodar.Ambient = 9000341,9000342
+CitizenBots.Assign.Exodar.AmbientBurst = 9000343,9000344,9000345,9000346,9000347,9000348,9000349,9000350
+
+CitizenBots.Assign.Orgrimmar.Fishers = 9000126,9000127
+CitizenBots.Assign.Orgrimmar.FishersBurst =
+CitizenBots.Assign.Orgrimmar.Ambient = 9000128,9000129,9000130,9000131,9000132,9000133,9000134,9000135
+CitizenBots.Assign.Orgrimmar.AmbientBurst = 9000136,9000137,9000138,9000139,9000140,9000141,9000142,9000143,9000144,9000145,9000146,9000147,9000148,9000149,9000150,9000151,9000152,9000153,9000154,9000155,9000156,9000157,9000158,9000159,9000160,9000161,9000162,9000163,9000164,9000165,9000166,9000167,9000168,9000169,9000170,9000171,9000172,9000173,9000174,9000175,9000176,9000177,9000178,9000179,9000180,9000181,9000182
+CitizenBots.Assign.Orgrimmar.CrowdBurst = 9000183,9000184,9000185,9000186,9000187,9000188,9000189,9000190,9000191,9000192,9000193,9000194,9000195,9000196,9000197,9000198,9000199,9000200
+
+CitizenBots.Assign.Undercity.Ambient = 9000296,9000297,9000298
+CitizenBots.Assign.Undercity.AmbientBurst = 9000299,9000300,9000301,9000302,9000303,9000304,9000305,9000306,9000307,9000308,9000309,9000310,9000311,9000312,9000313,9000314,9000315,9000316,9000317,9000318,9000319,9000320
+
+CitizenBots.Assign.ThunderBluff.Ambient = 9000361,9000362
+CitizenBots.Assign.ThunderBluff.AmbientBurst = 9000363,9000364,9000365,9000366,9000367,9000368,9000369,9000370,9000371,9000372,9000373,9000374,9000375,9000376,9000377,9000378,9000379,9000380
+
+CitizenBots.Assign.Silvermoon.Ambient = 9000381,9000382
+CitizenBots.Assign.Silvermoon.AmbientBurst = 9000383,9000384,9000385,9000386,9000387,9000388,9000389,9000390,9000391,9000392,9000393,9000394,9000395,9000396,9000397,9000398,9000399,9000400
+
+CitizenBots.Assign.Shattrath.Ambient = 9000241,9000242,9000243,9000244,9000245,9000246,9000247,9000248,9000249,9000250,9000251,9000252,9000253,9000254,9000255,9000256,9000257,9000258,9000259,9000260
+CitizenBots.Assign.Shattrath.AmbientBurst =
+
+CitizenBots.Assign.Dalaran.Ambient = 9000201,9000202,9000203,9000204,9000205,9000206,9000207,9000208,9000209,9000210,9000211,9000212,9000213,9000214,9000215,9000216,9000217,9000218,9000219,9000220,9000221,9000222,9000223,9000224,9000225
+CitizenBots.Assign.Dalaran.AmbientBurst = 9000226,9000227,9000228,9000229,9000230
+
+# Shorter activity windows make the stage feel alive without letting permanent
+# cast members wander away from their assigned city/POI.
+CitizenBots.ActivityDurationMinSec = 45
+CitizenBots.ActivityDurationMaxSec = 180
+
+CitizenBots.RandomSayChance = 0
+
+# Keep city bots out of /say by default. Playerbot chat replies can cascade
+# hard when many staged bots hear each other, so emotes/dances/duels carry
+# the ambiance unless this is explicitly enabled.
+CitizenBots.EnableSay = 1
+CitizenBots.SayCooldownSec = 30
+CitizenBots.EnableFishing = 1
+CitizenBots.EnableLogoutCycle = 0
+CitizenBots.TeleportIfOutsideCity = 1
+CitizenBots.KeepEmoteStrategy = 1
+CitizenBots.KeepFoodStrategy = 1
+
+# Living-crowd scenes (bank/AH squares; see docs/specs/2026-08-11-living-crowd-design.md)
+CitizenBots.EnableCrowdScenes = 1
+CitizenBots.CrowdPlayerRadius = 60
+CitizenBots.CrowdChatCooldownSec = 90
+CitizenBots.CrowdAfkMinSec = 60
+CitizenBots.CrowdAfkMaxSec = 180
+
+# Chance for non-dueler city bots to mount while traveling between outdoor POIs.
+# Bots dismount again when they arrive so emotes/fishing/social actions look normal.
+CitizenBots.MountBetweenPoiChance = 90
+
+CitizenBots.Weight.WanderDistrict = 30
+CitizenBots.Weight.SitInTavern = 20
+CitizenBots.Weight.RandomEmote = 15
+CitizenBots.Weight.VisitAuctionHouse = 10
+CitizenBots.Weight.VisitMailbox = 10
+CitizenBots.Weight.BuyFood = 10
+CitizenBots.Weight.VisitTrainer = 8
+CitizenBots.Weight.WatchDuels = 12
+CitizenBots.Weight.DrinkInTavern = 10
+CitizenBots.Weight.WalkCityWalls = 10
+CitizenBots.Weight.FishAtDocks = 5
+CitizenBots.Weight.ReturnToInn = 15
+CitizenBots.Weight.Logout = 3
+
+# Legacy fallback only. With CityCount.* configured above, this is ignored.
+# Leave at 0 for the V2 fixed-roster profile.
+CitizenBots.DedicatedCount = 0
