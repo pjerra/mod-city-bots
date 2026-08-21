@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """
-Generate deterministic stage-cast SQL for mod-city-bots V2.
+Historical generator of the mod-city-bots V2 stage-cast identity data.
 
-Outputs (into data/sql/.../updates/):
-  - db-auth:     fixed account IDs 12001+
-  - db-characters: fixed character GUIDs 9000001+
-  - playerbots:  citizen_roster + account_type rows
+Outputs go to tools/out/<db>/ (git-ignored) for reference only:
+  - db-auth:       fixed account IDs 12001+
+  - db-characters: fixed character GUIDs 9000001+ (characters rows only)
+  - playerbots:    citizen_roster + account_type rows
 
-Re-run after editing CAST below, then commit the generated .sql files.
-Every install that applies the same SQL gets identical accounts, GUIDs, names, roles.
+It does NOT produce the shipped seeds. data/sql/db-characters/updates/* are
+dumps of the final database state (characters, homebinds, outfits) and
+data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql has been edited by
+hand since this tool last ran. Never copy tools/out files into
+data/sql/*/updates: the AzerothCore updater applies every new file there, and
+db-characters files must stay self-contained (no reads from acore_playerbots /
+acore_world). See data/sql/README.md.
 """
 
 from __future__ import annotations
@@ -28,9 +33,10 @@ ACCOUNT_PREFIX = "citybot"
 ACCOUNT_PASSWORD = "citybot_stage"  # same on every install
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
-OUT_AUTH = MODULE_ROOT / "data/sql/db-auth/updates"
-OUT_CHARS = MODULE_ROOT / "data/sql/db-characters/updates"
-OUT_PB = MODULE_ROOT / "data/sql/playerbots/updates"
+OUT_ROOT = MODULE_ROOT / "tools/out"  # never data/sql/*/updates (auto-applied by the core updater)
+OUT_AUTH = OUT_ROOT / "db-auth"
+OUT_CHARS = OUT_ROOT / "db-characters"
+OUT_PB = OUT_ROOT / "playerbots"
 
 # SRP6 constants (WoW / AzerothCore)
 SRP_N = int(

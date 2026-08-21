@@ -5,6 +5,39 @@ as deployed in July 2026 and records everything changed since, with the reason
 each change was needed. All fixes were found and verified on a live server
 (~1,500 random playerbots + the 400-bot city cast).
 
+## 2026-08-22 — fresh installs through the database updater
+
+- **Fresh installs failed in the core updater** (issue #1, reported by
+  DeadTrickz and notacoder-dev). Root cause, confirmed from the AzerothCore
+  Playerbot-branch source: worldserver updates auth, then characters, then
+  world, and mod-playerbots updates `acore_playerbots` last with its own
+  loader that never scans other modules. Six `db-characters` updates joined
+  `acore_playerbots.citizen_roster` (two also `acore_world.city_bot_poi`), so
+  on an empty database the updater hit "table doesn't exist" and worldserver
+  aborted. The C++ was never the crash; it already tolerates an empty roster.
+- `db-characters` is now two self-contained seeds
+  (`2026_08_22_00_stage_cast_characters.sql`, `2026_08_22_01_stage_cast_outfits.sql`)
+  holding the final state the old 15-file chain produced. Verified on a throwaway
+  MySQL 8.4 with the AC base schema: updater order on a fresh database succeeds
+  and the resulting `acore_characters` is byte-identical to the old chain applied
+  in the working order; reapplying is a no-op; an already-occupied equipment
+  slot is left alone.
+- `data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql` still has to be
+  imported by hand before the first start; README now says so plainly instead
+  of "preferred: auto-updater".
+- `2026_08_11_01_sync_citizen_roster_race_classes.sql` moved under `data/sql/dev`
+  (existing-database repair; its roster values were already in the roster seed).
+- Startup log lines now name the shipped files instead of deleted ones
+  (`src/CbShippedSql.h`); `conf/*.conf*` no longer point at a file that never
+  shipped; `tools/generate_stage_cast.py` now writes to `tools/out/` only.
+- Upgrading an existing server: the two new files run once and DELETE+INSERT
+  the 400 stage-cast `characters` rows, homebinds and starter outfits, so the
+  cast's saved positions, explored zones, taxi nodes and honor/kill counters
+  reset to the shipped state. A customized roster needs the dev re-sync
+  afterwards (README, Install step 4).
+- Not yet done for this change: a worldserver boot with mod-playerbots against
+  a freshly seeded database (verification was at the SQL/dump level).
+
 ## 2026-08 — the movement-hardening campaign
 
 ### The frozen-city fix (the big one)
