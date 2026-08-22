@@ -35,8 +35,20 @@ each change was needed. All fixes were found and verified on a live server
   cast's saved positions, explored zones, taxi nodes and honor/kill counters
   reset to the shipped state. A customized roster needs the dev re-sync
   afterwards (README, Install step 4).
-- Not yet done for this change: a worldserver boot with mod-playerbots against
-  a freshly seeded database (verification was at the SQL/dump level).
+- Verified later the same day on a fresh Playerbots stack built from source
+  (wow-manage install path): updater applied all six module files, roster
+  import, module up, city bots logging in.
+- **Validator no longer calls a config-filtered roster a missing import.** With
+  `CitizenBots.Assign.RequireListed=1` and the nine `conf.dist` assignments the
+  faction guard refuses, 391 of 400 rows load and the startup check said
+  "roster has 391/400 entries — re-import the roster" right after a correct
+  import. The registry now tracks table rows / disabled / unlisted-or-refused
+  counts; the check errors only when the TABLE is short (or present but 0 active,
+  which it now names as a conf problem), otherwise logs an Info line with the
+  counts and the real `RequireListed` value. Open follow-up: those nine
+  wrong-faction entries in `conf.dist` (4 Alliance in `OrgrimmarGate.Duelers`,
+  5 Horde in `Goldshire.AmbientBurst`) should be reassigned so fresh installs
+  reach 400/400.
 
 ## 2026-08 — the movement-hardening campaign
 

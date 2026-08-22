@@ -31,6 +31,14 @@ public:
 
     void LoadFromDatabase();
     bool IsLoaded() const { return _loaded; }
+    // Bookkeeping from the last LoadFromDatabase():
+    //   TableRowCount  rows in citizen_roster,
+    //   DisabledCount  rows with enabled=0 (never loaded),
+    //   UnlistedCount  enabled rows dropped by CitizenBots.Assign.RequireListed=1
+    //                  (GUID not in any Assign list, or refused e.g. wrong faction).
+    uint32 TableRowCount() const { return _tableRows; }
+    uint32 DisabledCount() const { return _disabledRows; }
+    uint32 UnlistedCount() const { return _unlistedRows; }
 
     std::vector<CitizenRosterEntry> const& All() const { return _entries; }
 
@@ -49,6 +57,9 @@ private:
     CitizenRosterRegistry() = default;
 
     bool _loaded{false};
+    uint32 _tableRows{0};
+    uint32 _disabledRows{0};
+    uint32 _unlistedRows{0};
     std::vector<CitizenRosterEntry> _entries;
 };
 

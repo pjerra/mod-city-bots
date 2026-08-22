@@ -7,6 +7,7 @@
 #include "CbLog.h"
 #include "CbShippedSql.h"
 #include "CharacterCache.h"
+#include "Config.h"
 #include "DatabaseEnv.h"
 #include "QueryResult.h"
 
@@ -50,10 +51,28 @@ namespace CbCitizenAccountMgr
         _validated = true;
 
         CitizenRosterRegistry::Instance().LoadFromDatabase();
+        bool const requireListed =
+            sConfigMgr->GetOption<bool>("CitizenBots.Assign.RequireListed", true, false);
         if (!CitizenRosterRegistry::Instance().IsLoaded())
         {
-            CbLog::Error("citizen_roster table empty or missing — the core updater never applies "
-                         "data/sql/playerbots; import " CB_ROSTER_SQL " by hand, then restart");
+            uint32 const tableRows = CitizenRosterRegistry::Instance().TableRowCount();
+            if (tableRows == 0)
+            {
+                CbLog::Error("citizen_roster table empty or missing — the core updater never applies "
+                             "data/sql/playerbots; import " CB_ROSTER_SQL " by hand, then restart");
+            }
+            else
+            {
+                // The table is there; every row was dropped by the table's enabled flag or by
+                // CitizenBots.Assign.* with RequireListed=1. A re-import will not change that.
+                CbLog::Error("citizen_roster has {} rows but 0 active city bots — {} disabled in the table, "
+                             "{} not listed or refused by CitizenBots.Assign.* (RequireListed={}). "
+                             "Check mod_city_bots.conf; a re-import will not help.",
+                             tableRows,
+                             CitizenRosterRegistry::Instance().DisabledCount(),
+                             CitizenRosterRegistry::Instance().UnlistedCount(),
+                             requireListed ? 1 : 0);
+            }
             return;
         }
 
@@ -81,9 +100,24 @@ namespace CbCitizenAccountMgr
 
         if (rosterSize < STAGE_CAST_CAPACITY)
         {
-            CbLog::Error("stage cast roster has {}/{} entries — re-import "
-                         CB_ROSTER_SQL " then restart",
-                         rosterSize, STAGE_CAST_CAPACITY);
+            uint32 const tableRows = CitizenRosterRegistry::Instance().TableRowCount();
+            if (tableRows < STAGE_CAST_CAPACITY)
+            {
+                CbLog::Error("citizen_roster has {}/{} rows ({} active) — re-import "
+                             CB_ROSTER_SQL " then restart",
+                             tableRows, STAGE_CAST_CAPACITY, rosterSize);
+            }
+            else
+            {
+                // The table is complete; the shortfall is config, not a missing import.
+                CbLog::Info("stage cast roster: {}/{} entries active — {} disabled in citizen_roster, "
+                            "{} not listed or refused by CitizenBots.Assign.* (RequireListed={}). "
+                            "Not a missing import.",
+                            rosterSize, STAGE_CAST_CAPACITY,
+                            CitizenRosterRegistry::Instance().DisabledCount(),
+                            CitizenRosterRegistry::Instance().UnlistedCount(),
+                            requireListed ? 1 : 0);
+            }
         }
 
         if (missingChars)
