@@ -81,9 +81,23 @@ namespace CbCitizenAccountMgr
 
         if (rosterSize < STAGE_CAST_CAPACITY)
         {
-            CbLog::Error("stage cast roster has {}/{} entries — re-import "
-                         CB_ROSTER_SQL " then restart",
-                         rosterSize, STAGE_CAST_CAPACITY);
+            uint32 const tableRows = CitizenRosterRegistry::Instance().TableRowCount();
+            if (tableRows < STAGE_CAST_CAPACITY)
+            {
+                CbLog::Error("citizen_roster has {}/{} rows — re-import "
+                             CB_ROSTER_SQL " then restart",
+                             tableRows, STAGE_CAST_CAPACITY);
+            }
+            else
+            {
+                // The table is complete; the shortfall is config, not a missing import.
+                CbLog::Info("stage cast roster: {}/{} entries active — {} disabled in citizen_roster, "
+                            "{} not listed or refused by CitizenBots.Assign.* (RequireListed=1). "
+                            "Expected; not a missing import.",
+                            rosterSize, STAGE_CAST_CAPACITY,
+                            CitizenRosterRegistry::Instance().DisabledCount(),
+                            CitizenRosterRegistry::Instance().UnlistedCount());
+            }
         }
 
         if (missingChars)

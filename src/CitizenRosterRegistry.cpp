@@ -283,6 +283,9 @@ void CitizenRosterRegistry::LoadFromDatabase()
 {
     _entries.clear();
     _loaded = false;
+    _tableRows = 0;
+    _disabledRows = 0;
+    _unlistedRows = 0;
 
     QueryResult result = PlayerbotsDatabase.Query(
         "SELECT guid, account_id, character_name, race, class, gender, level, "
@@ -308,11 +311,16 @@ void CitizenRosterRegistry::LoadFromDatabase()
         entry.poiId = fields[9].Get<uint32>();
         entry.loginPriority = fields[10].Get<int32>();
         entry.enabled = fields[11].Get<uint8>() != 0;
+        ++_tableRows;
         if (entry.enabled)
             _entries.push_back(std::move(entry));
+        else
+            ++_disabledRows;
     } while (result->NextRow());
 
+    std::size_t const enabledRows = _entries.size();
     ApplyConfigAssignments(_entries);
+    _unlistedRows = static_cast<uint32>(enabledRows - _entries.size());
 
     _loaded = !_entries.empty();
 }
