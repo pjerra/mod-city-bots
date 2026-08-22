@@ -31,9 +31,11 @@ public:
 
     void LoadFromDatabase();
     bool IsLoaded() const { return _loaded; }
-    // Bookkeeping from the last LoadFromDatabase(): rows in citizen_roster, and
-    // how many were not kept (disabled in the table / dropped because
-    // CitizenBots.Assign.RequireListed=1 and the GUID is not listed or was refused).
+    // Bookkeeping from the last LoadFromDatabase():
+    //   TableRowCount  rows in citizen_roster,
+    //   DisabledCount  rows with enabled=0 (never loaded),
+    //   UnlistedCount  enabled rows dropped by CitizenBots.Assign.RequireListed=1
+    //                  (GUID not in any Assign list, or refused e.g. wrong faction).
     uint32 TableRowCount() const { return _tableRows; }
     uint32 DisabledCount() const { return _disabledRows; }
     uint32 UnlistedCount() const { return _unlistedRows; }
