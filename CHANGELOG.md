@@ -5,6 +5,30 @@ as deployed in July 2026 and records everything changed since, with the reason
 each change was needed. All fixes were found and verified on a live server
 (~1,500 random playerbots + the 400-bot city cast).
 
+## 2026-08-28 — city bots no longer earn achievements
+
+- **City bots took the realm firsts** (reported by Andood). mod-playerbots
+  blocks realm-first achievements in `Playerbots.cpp`
+  (`OnPlayerBeforeAchievementComplete`), but only for bots that answer true to
+  `RandomPlayerbotMgr::IsRandomBot()` / `IsAddclassBot()`. `IsRandomBot()`
+  requires the character's account to be in the random-bot account list *and*
+  the GUID to be in the live random pool. With
+  `CitizenBots.UseDedicatedAccounts = 1` the stage cast is on its own accounts
+  and in neither set, so the achievement system treated all 400 citizens as
+  real players.
+- `CityBotsPresencePlayerScript` now implements `OnPlayerBeforeAchievementComplete`
+  and `OnPlayerBeforeCriteriaProgress`, returning false for roster GUIDs. The
+  criteria hook is there so 400 bots stop writing achievement progress rows they
+  can never complete.
+- New `CitizenBots.BlockAchievements` (default 1) turns the block off for owners
+  who do want bot achievements.
+- `data/sql/dev/db-characters/updates/2026_08_28_00_strip_citizen_bot_achievements.sql`
+  clears `character_achievement` / `character_achievement_progress` for GUIDs
+  9000001-9000400 on servers that already lost realm firsts. Apply it with
+  worldserver stopped: `AchievementGlobalMgr::LoadCompletedAchievements()` reads
+  the "already taken" realm-first set from `character_achievement` once at
+  startup, so the realm firsts are claimable again after the next start.
+
 ## 2026-08-22 — fresh installs through the database updater
 
 - **Fresh installs failed in the core updater** (issue #1, reported by

@@ -27,6 +27,7 @@ inline constexpr CbSettingDef kCbSettings[] =
     { "LogMirrorToModule",       CbType::Bool,  0,   0,   1   },
     { "Percent",                 CbType::UInt,  0,   0,  100  },
     { "UseDedicatedAccounts",    CbType::Bool,  1,   0,   1   },
+    { "BlockAchievements",       CbType::Bool,  1,   0,   1   },
     { "DedicatedCount",          CbType::UInt,  0,   0, 5000  },
     { "HybridPopulation",        CbType::Bool,  0,   0,   1   },
     { "CountRealPlayers",        CbType::Bool,  1,   0,   1   },

@@ -111,7 +111,9 @@ public:
             PLAYERHOOK_ON_LOGOUT,
             PLAYERHOOK_ON_MAP_CHANGED,
             PLAYERHOOK_ON_UPDATE_ZONE,
-            PLAYERHOOK_ON_UPDATE_AREA
+            PLAYERHOOK_ON_UPDATE_AREA,
+            PLAYERHOOK_ON_BEFORE_ACHI_COMPLETE,
+            PLAYERHOOK_ON_BEFORE_CRITERIA_PROGRESS
         })
     {
     }
@@ -137,6 +139,23 @@ public:
         }
     }
 
+    // Citizen bots run on their own accounts, so mod-playerbots' realm-first
+    // guard in Playerbots.cpp does not cover them: RandomPlayerbotMgr::IsRandomBot()
+    // only answers true for GUIDs on a random-bot account that are in the current
+    // random pool. Without this hook the stage cast earns achievements like a real
+    // player and can take the realm firsts on a live server (reported by Andood).
+    bool OnPlayerBeforeAchievementComplete(Player* player, AchievementEntry const* /*achievement*/) override
+    {
+        return !IsBlockedCitizen(player);
+    }
+
+    // Blocking the criteria too keeps 400 bots from writing achievement progress
+    // rows they can never complete.
+    bool OnPlayerBeforeCriteriaProgress(Player* player, AchievementCriteriaEntry const* /*criteria*/) override
+    {
+        return !IsBlockedCitizen(player);
+    }
+
     void OnPlayerLogout(Player* player) override
     {
         CityPopulationMgr::OnPlayerLogout(player);
@@ -158,6 +177,18 @@ public:
     void OnPlayerUpdateArea(Player* player, uint32 /*oldArea*/, uint32 newArea) override
     {
         CityPopulationMgr::OnPlayerAreaUpdate(player, newArea);
+    }
+
+private:
+    static bool IsBlockedCitizen(Player* player)
+    {
+        if (!player || !player->GetSession() || !player->GetSession()->IsBot())
+            return false;
+
+        if (!CbSettings::GetBool("BlockAchievements"))
+            return false;
+
+        return CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter());
     }
 };
 

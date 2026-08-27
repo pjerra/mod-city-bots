@@ -200,6 +200,14 @@ fall back to their `citizen_roster` database assignment.
   "do not convert normal random playerbots into city bots."
 - `CitizenBots.UseDedicatedAccounts = 1` means the module uses the 400 dedicated
   citybot accounts seeded by SQL.
+- `CitizenBots.BlockAchievements = 1` stops the stage cast from completing
+  achievements or tracking achievement criteria. Keep it on: mod-playerbots
+  only shields its own random/addclass bots from realm firsts, and citizen bots
+  run on dedicated accounts, so with the block off they compete with real
+  players for realm firsts. To clean up achievements bots already took, stop
+  worldserver and apply
+  `data/sql/dev/db-characters/updates/2026_08_28_00_strip_citizen_bot_achievements.sql`;
+  realm firsts free up on the next start.
 - `CitizenBots.DedicatedCount = 0` is a legacy fallback and is ignored when
   `CityCount.*` values are configured.
 - `CitizenBots.LogLevel = 2` is the default: normal info/status logging. The
