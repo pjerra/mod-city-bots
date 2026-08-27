@@ -5,7 +5,7 @@ as deployed in July 2026 and records everything changed since, with the reason
 each change was needed. All fixes were found and verified on a live server
 (~1,500 random playerbots + the 400-bot city cast).
 
-## 2026-08-28 — city bots no longer earn achievements
+## 2026-08-28 — citizens stop bypassing playerbots' player-protection gates
 
 - **City bots took the realm firsts** (reported by Andood). mod-playerbots
   blocks realm-first achievements in `Playerbots.cpp`
@@ -28,6 +28,23 @@ each change was needed. All fixes were found and verified on a live server
   worldserver stopped: `AchievementGlobalMgr::LoadCompletedAchievements()` reads
   the "already taken" realm-first set from `character_achievement` once at
   startup, so the realm firsts are claimable again after the next start.
+- **Same class, second case: `AiPlayerbot.EnableRandomBotTrading` was ignored
+  for citizens.** mod-playerbots enforces it in `TradeStatusAction`
+  (`enableRandomBotTrading == 0 / 2 / 3`) behind the same `IsRandomBot()` /
+  `IsAddclassBot()` test, so a server that turned bot trading off still had 400
+  citizens trading with players. The module now enforces the owner's existing
+  setting through the core's own `OnPlayerCanInitTrade` /
+  `OnPlayerCanSetTradeItem` hooks, which hold no matter what the bot's AI does:
+  mode 0 refuses the trade window (with the same "Trading is disabled" whisper),
+  mode 2 stops a citizen putting its items in, mode 3 stops a player putting
+  items into a citizen's window. Money is untouched, matching playerbots, whose
+  2/3 checks look at item value only. No new config key — city bots follow
+  whatever playerbots was set to.
+- Audited the other 75 `IsRandomBot()` / `IsAddclassBot()` gates in
+  mod-playerbots for the same bypass. The rest are opt-ins the citizens simply
+  do not get (guild tasks, `/who` trade lines, LFG role picking, BG queue
+  bookkeeping, random-bot XP rate, trade discounts), not player-facing
+  protections, so nothing else needs a mirror.
 
 ## 2026-08-22 — fresh installs through the database updater
 

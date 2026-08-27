@@ -208,6 +208,12 @@ fall back to their `citizen_roster` database assignment.
   worldserver and apply
   `data/sql/dev/db-characters/updates/2026_08_28_00_strip_citizen_bot_achievements.sql`;
   realm firsts free up on the next start.
+- Trading follows mod-playerbots' own `AiPlayerbot.EnableRandomBotTrading`
+  (`0` none, `1` all, `2` bots only buy, `3` bots only sell). There is no
+  separate city-bot key: whatever the owner set for playerbots now also holds
+  for the stage cast. mod-playerbots enforces it inside `TradeStatusAction`
+  behind the same `IsRandomBot()` test that missed achievements, so before this
+  the 400 citizens ignored the setting.
 - `CitizenBots.DedicatedCount = 0` is a legacy fallback and is ignored when
   `CityCount.*` values are configured.
 - `CitizenBots.LogLevel = 2` is the default: normal info/status logging. The

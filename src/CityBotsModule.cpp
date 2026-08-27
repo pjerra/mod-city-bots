@@ -11,6 +11,7 @@
 
 #include "Playerbots.h"
 #include "PlayerbotAI.h"
+#include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotMgr.h"
 
 #include "AiObjectContextAccess.h"
@@ -113,7 +114,9 @@ public:
             PLAYERHOOK_ON_UPDATE_ZONE,
             PLAYERHOOK_ON_UPDATE_AREA,
             PLAYERHOOK_ON_BEFORE_ACHI_COMPLETE,
-            PLAYERHOOK_ON_BEFORE_CRITERIA_PROGRESS
+            PLAYERHOOK_ON_BEFORE_CRITERIA_PROGRESS,
+            PLAYERHOOK_CAN_INIT_TRADE,
+            PLAYERHOOK_CAN_SET_TRADE_ITEM
         })
     {
     }
@@ -156,6 +159,52 @@ public:
         return !IsBlockedCitizen(player);
     }
 
+    // mod-playerbots enforces AiPlayerbot.EnableRandomBotTrading inside
+    // TradeStatusAction, behind the same IsRandomBot() test that missed the
+    // achievement hook, so an owner who turned bot trading off still had 400
+    // citizens trading with players. Enforce the owner's setting where the core
+    // asks instead of inside a bot action the citizens never reach.
+    // 0 = no trading, 1 = trading, 2 = the bot may only buy, 3 = only sell.
+    bool OnPlayerCanInitTrade(Player* player, Player* target) override
+    {
+        if (sPlayerbotAIConfig.enableRandomBotTrading != 0)
+            return true;
+
+        if (!IsCitizenBot(player) && !IsCitizenBot(target))
+            return true;
+
+        // Say why, the way TradeStatusAction does; a silently dead trade window
+        // reads as a broken bot.
+        if (player && IsCitizenBot(target))
+            target->Whisper("Trading is disabled", LANG_UNIVERSAL, player);
+
+        return false;
+    }
+
+    bool OnPlayerCanSetTradeItem(Player* player, Item* /*tradedItem*/, uint8 /*tradeSlot*/) override
+    {
+        int32 const mode = sPlayerbotAIConfig.enableRandomBotTrading;
+        if (mode != 2 && mode != 3)
+            return true;
+
+        if (!player)
+            return true;
+
+        Player* other = player->GetTrader();
+        if (!other)
+            return true;
+
+        // 2 (only buy): the citizen must not hand its own items over.
+        if (mode == 2 && IsCitizenBot(player) && !IsCitizenBot(other))
+            return false;
+
+        // 3 (only sell): the player must not hand items to a citizen.
+        if (mode == 3 && IsCitizenBot(other) && !IsCitizenBot(player))
+            return false;
+
+        return true;
+    }
+
     void OnPlayerLogout(Player* player) override
     {
         CityPopulationMgr::OnPlayerLogout(player);
@@ -180,15 +229,17 @@ public:
     }
 
 private:
-    static bool IsBlockedCitizen(Player* player)
+    static bool IsCitizenBot(Player* player)
     {
         if (!player || !player->GetSession() || !player->GetSession()->IsBot())
             return false;
 
-        if (!CbSettings::GetBool("BlockAchievements"))
-            return false;
-
         return CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter());
+    }
+
+    static bool IsBlockedCitizen(Player* player)
+    {
+        return CbSettings::GetBool("BlockAchievements") && IsCitizenBot(player);
     }
 };
 
