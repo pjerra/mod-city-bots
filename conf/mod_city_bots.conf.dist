@@ -31,6 +31,13 @@ CitizenBots.LogMirrorToModule = 0
 CitizenBots.Percent = 0
 CitizenBots.UseDedicatedAccounts = 1
 
+# Achievements. 1 (default) blocks the stage cast from completing achievements
+# and from tracking achievement criteria. mod-playerbots only shields its own
+# random/addclass bots from realm firsts, and citizen bots run on dedicated
+# accounts, so without this they compete with real players for realm firsts.
+# Set to 0 only if you want city bots to earn achievements like players.
+CitizenBots.BlockAchievements = 1
+
 # Online defaults with the values below:
 # - Always-on population: 400 city bots.
 # - Hybrid burst mode can be re-enabled below for a lower always-on baseline.

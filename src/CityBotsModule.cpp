@@ -11,6 +11,8 @@
 
 #include "Playerbots.h"
 #include "PlayerbotAI.h"
+#include "PlayerbotAIConfig.h"
+#include "PlayerbotTextMgr.h"
 #include "RandomPlayerbotMgr.h"
 
 #include "AiObjectContextAccess.h"
@@ -111,7 +113,11 @@ public:
             PLAYERHOOK_ON_LOGOUT,
             PLAYERHOOK_ON_MAP_CHANGED,
             PLAYERHOOK_ON_UPDATE_ZONE,
-            PLAYERHOOK_ON_UPDATE_AREA
+            PLAYERHOOK_ON_UPDATE_AREA,
+            PLAYERHOOK_ON_BEFORE_ACHI_COMPLETE,
+            PLAYERHOOK_ON_BEFORE_CRITERIA_PROGRESS,
+            PLAYERHOOK_CAN_INIT_TRADE,
+            PLAYERHOOK_CAN_SET_TRADE_ITEM
         })
     {
     }
@@ -137,6 +143,79 @@ public:
         }
     }
 
+    // Citizen bots run on their own accounts, so mod-playerbots' realm-first
+    // guard in Playerbots.cpp does not cover them: RandomPlayerbotMgr::IsRandomBot()
+    // only answers true for GUIDs on a random-bot account that are in the current
+    // random pool. Without this hook the stage cast earns achievements like a real
+    // player and can take the realm firsts on a live server (reported by Andood).
+    bool OnPlayerBeforeAchievementComplete(Player* player, AchievementEntry const* /*achievement*/) override
+    {
+        return !IsBlockedCitizen(player);
+    }
+
+    // Blocking the criteria too keeps 400 bots from writing achievement progress
+    // rows they can never complete.
+    bool OnPlayerBeforeCriteriaProgress(Player* player, AchievementCriteriaEntry const* /*criteria*/) override
+    {
+        return !IsBlockedCitizen(player);
+    }
+
+    // mod-playerbots enforces AiPlayerbot.EnableRandomBotTrading inside
+    // TradeStatusAction, behind the same IsRandomBot() test that missed the
+    // achievement hook, so an owner who turned bot trading off still had 400
+    // citizens trading with players. Enforce the owner's setting where the core
+    // asks instead of inside a bot action the citizens never reach.
+    // 0 = no trading, 1 = trading, 2 = the bot may only buy, 3 = only sell.
+    bool OnPlayerCanInitTrade(Player* player, Player* target) override
+    {
+        if (sPlayerbotAIConfig.enableRandomBotTrading != 0)
+            return true;
+
+        bool const targetIsCitizen = IsCitizenBot(target);
+        if (!targetIsCitizen && !IsCitizenBot(player))
+            return true;
+
+        // Say why, the way TradeStatusAction does -- through the same text key, so
+        // a server that customised trade_disabled gets its own wording here too.
+        // A silently dead trade window reads as a broken bot.
+        if (targetIsCitizen)
+            target->Whisper(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+                                "trade_disabled", "Trading is disabled", {}),
+                            LANG_UNIVERSAL, player);
+
+        return false;
+    }
+
+    bool OnPlayerCanSetTradeItem(Player* player, Item* /*tradedItem*/, uint8 tradeSlot) override
+    {
+        int32 const mode = sPlayerbotAIConfig.enableRandomBotTrading;
+        if (mode != 2 && mode != 3)
+            return true;
+
+        if (!player)
+            return true;
+
+        // The enchant slot is never handed over, and playerbots' own 2/3 checks
+        // ignore it: CalculateCost only sums slots below TRADE_SLOT_TRADED_COUNT.
+        // Blocking it here would break enchanting and craft-show for no gain.
+        if (tradeSlot == TRADE_SLOT_NONTRADED)
+            return true;
+
+        Player* other = player->GetTrader();
+        if (!other)
+            return true;
+
+        // 2 (only buy): the citizen must not hand its own items over.
+        if (mode == 2 && IsCitizenBot(player) && !IsCitizenBot(other))
+            return false;
+
+        // 3 (only sell): the player must not hand items to a citizen.
+        if (mode == 3 && IsCitizenBot(other) && !IsCitizenBot(player))
+            return false;
+
+        return true;
+    }
+
     void OnPlayerLogout(Player* player) override
     {
         CityPopulationMgr::OnPlayerLogout(player);
@@ -158,6 +237,25 @@ public:
     void OnPlayerUpdateArea(Player* player, uint32 /*oldArea*/, uint32 newArea) override
     {
         CityPopulationMgr::OnPlayerAreaUpdate(player, newArea);
+    }
+
+private:
+    static bool IsCitizenBot(Player* player)
+    {
+        if (!player || !player->GetSession() || !player->GetSession()->IsBot())
+            return false;
+
+        return CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter());
+    }
+
+    // Order matters, not for correctness but for cost: registering the criteria
+    // hook puts this on every SetCriteriaProgress call by every character on the
+    // realm. IsCitizenBot is a session flag plus a hash lookup and rejects humans
+    // and random bots immediately; CbSettings::GetBool scans the settings table,
+    // so it must only run for the citizens that got that far.
+    static bool IsBlockedCitizen(Player* player)
+    {
+        return IsCitizenBot(player) && CbSettings::GetBool("BlockAchievements");
     }
 };
 

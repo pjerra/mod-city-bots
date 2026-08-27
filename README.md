@@ -200,6 +200,29 @@ fall back to their `citizen_roster` database assignment.
   "do not convert normal random playerbots into city bots."
 - `CitizenBots.UseDedicatedAccounts = 1` means the module uses the 400 dedicated
   citybot accounts seeded by SQL.
+- `CitizenBots.BlockAchievements = 1` stops the stage cast from completing
+  achievements or tracking achievement criteria. Keep it on: mod-playerbots
+  only shields its own random/addclass bots from realm firsts, and citizen bots
+  run on dedicated accounts, so with the block off they compete with real
+  players for realm firsts. To clean up achievements bots already took, stop
+  worldserver and apply
+  `data/sql/dev/db-characters/updates/2026_08_28_00_strip_citizen_bot_achievements.sql`
+  (an existing-database repair, the one kind of `data/sql/dev` file meant for a
+  live server -- see the note in Install step 4); realm firsts free up on the
+  next start. The block covers the roster the module actually loads, so a
+  stage-cast character that `enabled = 0` or `Assign.RequireListed = 1` filtered
+  out is not blocked -- it also never logs in. The repair SQL is deliberately
+  wider: it cleans the whole 9000001-9000400 range.
+- Trading follows mod-playerbots' own `AiPlayerbot.EnableRandomBotTrading`
+  (`0` none, `1` all, `2` bots only buy, `3` bots only sell). There is no
+  separate city-bot key: whatever the owner set for playerbots now also holds
+  for the stage cast. mod-playerbots enforces it inside `TradeStatusAction`
+  behind the same `IsRandomBot()` test that missed achievements, so before this
+  the 400 citizens ignored the setting. Two deliberate differences from
+  playerbots: modes `2`/`3` block any item rather than only items its
+  `CalculateCost` values above zero (which lets a bot hand over greys), and they
+  refuse the item silently -- the client closes the trade window -- instead of
+  whispering on every slot click. Mode `0` still whispers.
 - `CitizenBots.DedicatedCount = 0` is a legacy fallback and is ignored when
   `CityCount.*` values are configured.
 - `CitizenBots.LogLevel = 2` is the default: normal info/status logging. The
