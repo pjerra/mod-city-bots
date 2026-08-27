@@ -282,6 +282,7 @@ namespace
 void CitizenRosterRegistry::LoadFromDatabase()
 {
     _entries.clear();
+    _guidIndex.clear();
     _loaded = false;
     _tableRows = 0;
     _disabledRows = 0;
@@ -321,6 +322,10 @@ void CitizenRosterRegistry::LoadFromDatabase()
     std::size_t const enabledRows = _entries.size();
     ApplyConfigAssignments(_entries);
     _unlistedRows = static_cast<uint32>(enabledRows - _entries.size());
+
+    _guidIndex.reserve(_entries.size());
+    for (CitizenRosterEntry const& entry : _entries)
+        _guidIndex.insert(entry.guid);
 
     _loaded = !_entries.empty();
 }
@@ -399,5 +404,5 @@ uint32 CitizenRosterRegistry::CountStaticRosterAtHome(char const* homeKey) const
 
 bool CitizenRosterRegistry::IsRosterGuid(uint32 guid) const
 {
-    return FindByGuid(guid) != nullptr;
+    return _guidIndex.find(guid) != _guidIndex.end();
 }

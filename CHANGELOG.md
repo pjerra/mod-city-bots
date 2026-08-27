@@ -19,7 +19,20 @@ each change was needed. All fixes were found and verified on a live server
 - `CityBotsPresencePlayerScript` now implements `OnPlayerBeforeAchievementComplete`
   and `OnPlayerBeforeCriteriaProgress`, returning false for roster GUIDs. The
   criteria hook is there so 400 bots stop writing achievement progress rows they
-  can never complete.
+  can never complete. This is deliberately wider than the guard it replaces:
+  playerbots blocks only the two realm-first flags and never touches criteria,
+  while citizens are blocked from every achievement. They lose achievement-reward
+  titles and statistics; nothing in AzerothCore or playerbots reads either as a
+  side channel (checked: playerbots only ever touches `character_achievement` to
+  delete orphans).
+- Registering the criteria hook puts `IsBlockedCitizen` on every
+  `SetCriteriaProgress` call by every character on the realm, and AzerothCore
+  runs that one on the **map update threads**, not the world thread. So the cheap
+  test runs first, and `CitizenRosterRegistry::IsRosterGuid` is now an
+  `unordered_set` lookup instead of a linear scan of 400 entries (every one of
+  its ~30 other call sites gets that for free). The registry is still loaded once
+  at startup, which is what makes the concurrent readers safe -- a future live
+  roster reload would need a lock; there is now a comment saying so.
 - New `CitizenBots.BlockAchievements` (default 1) turns the block off for owners
   who do want bot achievements.
 - `data/sql/dev/db-characters/updates/2026_08_28_00_strip_citizen_bot_achievements.sql`
@@ -39,7 +52,15 @@ each change was needed. All fixes were found and verified on a live server
   mode 2 stops a citizen putting its items in, mode 3 stops a player putting
   items into a citizen's window. Money is untouched, matching playerbots, whose
   2/3 checks look at item value only. No new config key — city bots follow
-  whatever playerbots was set to.
+  whatever playerbots was set to. The enchant slot is let through, matching
+  `CalculateCost`, which only sums the six traded slots. Two knowing
+  divergences: any item counts rather than only items playerbots' valuation
+  prices above zero (its `CalculateCost` zeroes a whole side when one item is
+  below normal quality, which lets a bot hand over greys), and modes 2/3 refuse
+  silently -- the core answers a refused item with `TRADE_STATUS_CLOSE_WINDOW` --
+  because the client re-sends `CMSG_SET_TRADE_ITEM` on every slot click and a
+  whisper there would need throttling to not be spam. Mode 0 whispers, through
+  playerbots' own `trade_disabled` text key.
 - Audited the other 75 `IsRandomBot()` / `IsAddclassBot()` gates in
   mod-playerbots for the same bypass. The rest are opt-ins the citizens simply
   do not get (guild tasks, `/who` trade lines, LFG role picking, BG queue

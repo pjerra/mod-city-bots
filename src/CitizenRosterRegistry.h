@@ -4,6 +4,7 @@
 #include "Ai/City/CityBots/CitizenInfo.h"
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 struct CitizenRosterEntry
@@ -51,6 +52,10 @@ public:
 
     uint32 CountRosterAtHome(char const* homeKey) const;
     uint32 CountStaticRosterAtHome(char const* homeKey) const;
+    // Hot: called from the achievement criteria hook, which AzerothCore runs on
+    // the map update threads, not the world thread. Safe only because the
+    // registry is loaded once at startup, before any citizen logs in -- adding
+    // a live roster reload would need a lock here first.
     bool IsRosterGuid(uint32 guid) const;
 
 private:
@@ -61,6 +66,7 @@ private:
     uint32 _disabledRows{0};
     uint32 _unlistedRows{0};
     std::vector<CitizenRosterEntry> _entries;
+    std::unordered_set<uint32> _guidIndex;  // guids of _entries, for IsRosterGuid
 };
 
 #endif

@@ -12,6 +12,7 @@
 #include "Playerbots.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotTextMgr.h"
 #include "RandomPlayerbotMgr.h"
 
 #include "AiObjectContextAccess.h"
@@ -170,24 +171,34 @@ public:
         if (sPlayerbotAIConfig.enableRandomBotTrading != 0)
             return true;
 
-        if (!IsCitizenBot(player) && !IsCitizenBot(target))
+        bool const targetIsCitizen = IsCitizenBot(target);
+        if (!targetIsCitizen && !IsCitizenBot(player))
             return true;
 
-        // Say why, the way TradeStatusAction does; a silently dead trade window
-        // reads as a broken bot.
-        if (player && IsCitizenBot(target))
-            target->Whisper("Trading is disabled", LANG_UNIVERSAL, player);
+        // Say why, the way TradeStatusAction does -- through the same text key, so
+        // a server that customised trade_disabled gets its own wording here too.
+        // A silently dead trade window reads as a broken bot.
+        if (targetIsCitizen)
+            target->Whisper(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+                                "trade_disabled", "Trading is disabled", {}),
+                            LANG_UNIVERSAL, player);
 
         return false;
     }
 
-    bool OnPlayerCanSetTradeItem(Player* player, Item* /*tradedItem*/, uint8 /*tradeSlot*/) override
+    bool OnPlayerCanSetTradeItem(Player* player, Item* /*tradedItem*/, uint8 tradeSlot) override
     {
         int32 const mode = sPlayerbotAIConfig.enableRandomBotTrading;
         if (mode != 2 && mode != 3)
             return true;
 
         if (!player)
+            return true;
+
+        // The enchant slot is never handed over, and playerbots' own 2/3 checks
+        // ignore it: CalculateCost only sums slots below TRADE_SLOT_TRADED_COUNT.
+        // Blocking it here would break enchanting and craft-show for no gain.
+        if (tradeSlot == TRADE_SLOT_NONTRADED)
             return true;
 
         Player* other = player->GetTrader();
@@ -237,9 +248,14 @@ private:
         return CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter());
     }
 
+    // Order matters, not for correctness but for cost: registering the criteria
+    // hook puts this on every SetCriteriaProgress call by every character on the
+    // realm. IsCitizenBot is a session flag plus a hash lookup and rejects humans
+    // and random bots immediately; CbSettings::GetBool scans the settings table,
+    // so it must only run for the citizens that got that far.
     static bool IsBlockedCitizen(Player* player)
     {
-        return CbSettings::GetBool("BlockAchievements") && IsCitizenBot(player);
+        return IsCitizenBot(player) && CbSettings::GetBool("BlockAchievements");
     }
 };
 

@@ -12,8 +12,11 @@
 -- AchievementGlobalMgr::LoadCompletedAchievements() builds the "already taken"
 -- set from character_achievement once, at startup.
 --
--- Run it while worldserver is stopped, or the still-loaded bots may write their
--- in-memory achievement state back on logout.
+-- Run it while worldserver is stopped. A logged-in bot will not rewrite deleted
+-- rows on its own (AchievementMgr::SaveToDB only writes entries whose `changed`
+-- flag is set, and loading clears it), but anything a citizen completes during
+-- that session still would -- and the realm-first set is only rebuilt at startup
+-- either way.
 
 -- Achievement-reward titles the bots were granted are left alone; they only
 -- show on the bot's own character.
