@@ -6,6 +6,7 @@
 #include "CbCitizenStateAccess.h"
 #include "CitizenRosterRegistry.h"
 #include "CityBotsRuntime.h"
+#include "PlayerbotsDatabase.h"
 
 #include "Ai/City/CityBots/CbValueKeys.h"
 #include "Ai/City/CityBots/CitizenInfo.h"
