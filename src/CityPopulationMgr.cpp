@@ -8,6 +8,7 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Timer.h"
+#include "PlayerbotsDatabase.h"
 
 #include <string>
 #include <unordered_map>
