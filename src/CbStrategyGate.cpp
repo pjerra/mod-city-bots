@@ -6,7 +6,7 @@
 #include "CbCitizenStateAccess.h"
 #include "CitizenRosterRegistry.h"
 #include "CityBotsRuntime.h"
-#include "PlayerbotsDatabase.h"
+#include "CbCoreCompat.h"
 
 #include "Ai/City/CityBots/CbValueKeys.h"
 #include "Ai/City/CityBots/CitizenInfo.h"
@@ -568,7 +568,7 @@ namespace
     {
         ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(guidLow);
         Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
-        if (!bot || !bot->IsInWorld() || !bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot || !bot->IsInWorld() || !bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return nullptr;
 
         return bot;
@@ -1986,7 +1986,7 @@ namespace
         {
             (void)guid;
             if (!player || player == bot || !player->IsInWorld() ||
-                !player->GetSession() || player->GetSession()->IsBot())
+                !player->GetSession() || CbIsBotSession(player->GetSession()))
                 continue;
             if (!IsInsideDuelArea(player, state, areaRadius))
                 continue;
@@ -2020,7 +2020,7 @@ namespace
             (void)guid;
             if (!player || player == bot || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || player->GetSession()->IsBot())
+            if (!player->GetSession() || CbIsBotSession(player->GetSession()))
                 continue;
             if (player->GetMapId() != bot->GetMapId())
                 continue;
@@ -2531,7 +2531,7 @@ namespace
 
         // Real players may be duel opponents, but only bot sessions take
         // movement orders from the gate.
-        if (!bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return false;
 
         float const anchorX = state.targetPoi.GetPositionX();
@@ -2670,7 +2670,7 @@ namespace
 
         // Real players may be duel opponents, but only bot sessions take
         // movement orders from the gate.
-        if (!bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return false;
 
         uint32 const guidLow = bot->GetGUID().GetCounter();
@@ -2745,7 +2745,7 @@ namespace
             return true;
         }
 
-        if (!bot->HasInArc(CAST_ANGLE_IN_FRONT, opponent, sPlayerbotAIConfig.sightDistance))
+        if (!bot->HasInArc(CAST_ANGLE_IN_FRONT, opponent, CbCfgSightDistance(sPlayerbotAIConfig)))
             bot->SetFacingTo(bot->GetAngle(opponent));
 
         if (s_duelProposer[guidLow] != guidLow)
@@ -3747,7 +3747,7 @@ namespace
             (void)guid;
             if (!player || player == bot || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || !player->GetSession()->IsBot())
+            if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
                 continue;
             if (player->GetMapId() != bot->GetMapId())
                 continue;
@@ -4170,7 +4170,7 @@ namespace CbStrategyGate
         if (!bot || !CbSettings::GetBool("Enable"))
             return false;
 
-        if (!bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return false;
 
         if (bot->InBattleground() || bot->GetGroup())

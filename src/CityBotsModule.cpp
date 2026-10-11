@@ -4,6 +4,7 @@
 
 #ifdef MOD_PLAYERBOTS
 
+#include "CbCoreCompat.h"
 #include "ScriptMgr.h"
 #include "Log.h"
 #include "Player.h"
@@ -126,7 +127,7 @@ public:
     {
         CityPopulationMgr::OnPlayerLogin(player);
 
-        if (!player || !player->GetSession() || !player->GetSession()->IsBot())
+        if (!player || !player->GetSession() || !CbIsBotSession(player->GetSession()))
             return;
 
         if (CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter()))
@@ -168,7 +169,7 @@ public:
     // 0 = no trading, 1 = trading, 2 = the bot may only buy, 3 = only sell.
     bool OnPlayerCanInitTrade(Player* player, Player* target) override
     {
-        if (sPlayerbotAIConfig.enableRandomBotTrading != 0)
+        if (CbCfgEnableRandomBotTrading(sPlayerbotAIConfig) != 0)
             return true;
 
         bool const targetIsCitizen = IsCitizenBot(target);
@@ -188,7 +189,7 @@ public:
 
     bool OnPlayerCanSetTradeItem(Player* player, Item* /*tradedItem*/, uint8 tradeSlot) override
     {
-        int32 const mode = sPlayerbotAIConfig.enableRandomBotTrading;
+        int32 const mode = CbCfgEnableRandomBotTrading(sPlayerbotAIConfig);
         if (mode != 2 && mode != 3)
             return true;
 
@@ -225,7 +226,7 @@ public:
     {
         CityPopulationMgr::OnPlayerMapChanged(player);
 
-        if (player && player->GetSession() && player->GetSession()->IsBot())
+        if (player && player->GetSession() && CbIsBotSession(player->GetSession()))
             CbStrategyGate::Reconcile(player);
     }
 
@@ -242,7 +243,7 @@ public:
 private:
     static bool IsCitizenBot(Player* player)
     {
-        if (!player || !player->GetSession() || !player->GetSession()->IsBot())
+        if (!player || !player->GetSession() || !CbIsBotSession(player->GetSession()))
             return false;
 
         return CitizenRosterRegistry::Instance().IsRosterGuid(player->GetGUID().GetCounter());
@@ -259,12 +260,16 @@ private:
     }
 };
 
-class CityBotsReaperScript : public PlayerbotScript
+// Ticks once per world update. This used to be a PlayerbotScript
+// (OnPlayerbotUpdate), but newer mod-playerbots cores removed PlayerbotScript
+// (the playerbots tick is now its own WorldScript::OnUpdate), and WorldScript
+// exists on every core, old and new.
+class CityBotsReaperScript : public WorldScript
 {
 public:
-    CityBotsReaperScript() : PlayerbotScript("CityBotsReaperScript") {}
+    CityBotsReaperScript() : WorldScript("CityBotsReaperScript") {}
 
-    void OnPlayerbotUpdate(uint32 diff) override
+    void OnUpdate(uint32 diff) override
     {
         if (!CityBotsRuntime::ContextsRegistered())
             return;

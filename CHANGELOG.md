@@ -5,6 +5,21 @@ as deployed in July 2026 and records everything changed since, with the reason
 each change was needed. All fixes were found and verified on a live server
 (~1,500 random playerbots + the 400-bot city cast).
 
+## 2026-10-11 — builds again on the newer mod-playerbots AzerothCore
+
+- **The module no longer compiled against the current core.** AzerothCore #27533
+  renamed `WorldSession::IsBot()` to `IsHeadless()`, and mod-playerbots #2793
+  moved `PlayerbotsDatabase` out of the core's `DatabaseEnv.h` into its own
+  header, so every rebuild with City Bots installed failed. All bot-session
+  tests now go through `CbIsBotSession()` (`src/CbCoreCompat.h`), which uses
+  whichever of the two names the core has, so older and newer cores both build.
+  The `PlayerbotsDatabase.h` include comes from Lanzen92's PR #5, and the
+  file that was still missing it (`CbCitizenAccountMgr.cpp`) now has it too.
+  mod-playerbots also renamed its `PlayerbotAIConfig` settings to PascalCase
+  and removed `PlayerbotScript`: the settings are read through `CbCfg*()` and
+  the per-tick reaper is now a `WorldScript::OnUpdate`. Compiled (all 20
+  source files) against the 0.9.14 and the 0.9.16 Yu'lon core/playerbots pins.
+
 ## 2026-08-28 — citizens stop bypassing playerbots' player-protection gates
 
 - **City bots took the realm firsts** (reported by Andood). mod-playerbots

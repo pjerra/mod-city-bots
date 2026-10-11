@@ -8,7 +8,7 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Timer.h"
-#include "PlayerbotsDatabase.h"
+#include "CbCoreCompat.h"
 
 #include <string>
 #include <unordered_map>
@@ -38,7 +38,7 @@ namespace
     {
         if (!player || !player->IsInWorld())
             return false;
-        if (!player->GetSession() || player->GetSession()->IsBot())
+        if (!player->GetSession() || CbIsBotSession(player->GetSession()))
             return false;
         if (!CbSettings::GetBool("HybridPopulation"))
             return false;

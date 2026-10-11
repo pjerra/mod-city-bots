@@ -1,4 +1,5 @@
 #include "CbCitizenAccountMgr.h"
+#include "CbCoreCompat.h"
 
 #include "Ai/City/CityBots/CitizenInfo.h"
 #include "CitizenRosterRegistry.h"

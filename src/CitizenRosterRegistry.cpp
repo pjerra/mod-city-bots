@@ -4,7 +4,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "QueryResult.h"
-#include "PlayerbotsDatabase.h"
+#include "CbCoreCompat.h"
 
 #include <algorithm>
 #include <cctype>

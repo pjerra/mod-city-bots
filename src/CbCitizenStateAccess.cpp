@@ -1,4 +1,5 @@
 #include "CbCitizenStateAccess.h"
+#include "CbCoreCompat.h"
 
 #include "Ai/City/CityBots/CbValueKeys.h"
 
@@ -28,7 +29,7 @@ namespace CbCitizenStateAccess
         if (!bot || !botAI)
             return false;
 
-        if (!bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return false;
 
         if (!bot->IsInWorld() || !bot->GetMap())

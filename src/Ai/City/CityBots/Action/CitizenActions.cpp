@@ -1,4 +1,5 @@
 #include "Ai/City/CityBots/Action/CitizenActions.h"
+#include "CbCoreCompat.h"
 
 #include "CbCitizenStateAccess.h"
 #include "CbCitizenRoles.h"
@@ -60,7 +61,7 @@ namespace
             Player* player = sRandomPlayerbotMgr.GetPlayerBot(entry->guid);
             if (!player || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || !player->GetSession()->IsBot())
+            if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
                 continue;
 
             fn(player);
@@ -111,7 +112,7 @@ namespace
             (void)guid;
             if (!player || player == bot || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || player->GetSession()->IsBot())
+            if (!player->GetSession() || CbIsBotSession(player->GetSession()))
                 continue;
             if (player->GetMapId() != bot->GetMapId())
                 continue;
@@ -204,7 +205,7 @@ namespace
         if (!bot || !opponent || bot == opponent)
             return false;
 
-        if (!opponent->GetSession() || !opponent->GetSession()->IsBot())
+        if (!opponent->GetSession() || !CbIsBotSession(opponent->GetSession()))
             return false;
 
         if (bot->duel || opponent->duel)
@@ -333,7 +334,7 @@ namespace
         if (!bot || !opponent || bot == opponent)
             return false;
 
-        if (!opponent->GetSession() || !opponent->GetSession()->IsBot())
+        if (!opponent->GetSession() || !CbIsBotSession(opponent->GetSession()))
             return false;
 
         if (bot->duel || opponent->duel)
@@ -805,7 +806,7 @@ bool CitizenDuelAction::Execute(Event /*event*/)
     if (!bot->IsWithinDistInMap(opponent, 10.0f))
         return MoveNear(opponent, IsDuelHubHome(state) ? 8.0f : 4.0f);
 
-    if (!bot->HasInArc(CAST_ANGLE_IN_FRONT, opponent, sPlayerbotAIConfig.sightDistance))
+    if (!bot->HasInArc(CAST_ANGLE_IN_FRONT, opponent, CbCfgSightDistance(sPlayerbotAIConfig)))
     {
         bot->SetFacingToObject(opponent);
         return true;
@@ -893,7 +894,7 @@ bool CitizenPlazaSocialAction::Execute(Event /*event*/)
         if (!player || player == bot)
             continue;
 
-        if (!player->GetSession() || !player->GetSession()->IsBot())
+        if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
             continue;
 
         if (CityLocationRegistry::Instance().GetStoredHomeLocation(
@@ -1010,7 +1011,7 @@ namespace
             (void)guid;
             if (!player || player == bot || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || !player->GetSession()->IsBot())
+            if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
                 continue;
             if (player->GetMapId() != bot->GetMapId())
                 continue;

@@ -1,4 +1,5 @@
 #include "CbPlayerbotsIntegration.h"
+#include "CbCoreCompat.h"
 
 #include "CbLog.h"
 #include "CbShippedSql.h"
@@ -75,7 +76,7 @@ namespace CbPlayerbotsIntegration
         if (connected)
         {
             if (connected->IsInWorld() && connected->GetSession() &&
-                connected->GetSession()->IsBot())
+                CbIsBotSession(connected->GetSession()))
             {
                 RemoveFromRandomPlayerList(guidLow);
                 detail = "already online outside random map";

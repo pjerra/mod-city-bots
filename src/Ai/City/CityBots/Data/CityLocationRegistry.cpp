@@ -1,4 +1,5 @@
 #include "Ai/City/CityBots/Data/CityLocationRegistry.h"
+#include "CbCoreCompat.h"
 
 #include "Ai/City/CityBots/CitizenInfo.h"
 #include "Ai/City/CityBots/Data/CityHubRegistry.h"
@@ -56,7 +57,7 @@ namespace
     {
         ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(guidLow);
         Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
-        if (!bot || !bot->IsInWorld() || !bot->GetSession() || !bot->GetSession()->IsBot())
+        if (!bot || !bot->IsInWorld() || !bot->GetSession() || !CbIsBotSession(bot->GetSession()))
             return nullptr;
 
         return bot;

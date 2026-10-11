@@ -1,4 +1,5 @@
 #include "CbCitizenLoginMgr.h"
+#include "CbCoreCompat.h"
 
 #include "CbCitizenAccountMgr.h"
 #include "CbPlayerbotsIntegration.h"
@@ -106,7 +107,7 @@ namespace
     {
         ObjectGuid playerGuid = ObjectGuid::Create<HighGuid::Player>(guid);
         Player* bot = ObjectAccessor::FindConnectedPlayer(playerGuid);
-        return bot && bot->IsInWorld() && bot->GetSession() && bot->GetSession()->IsBot();
+        return bot && bot->IsInWorld() && bot->GetSession() && CbIsBotSession(bot->GetSession());
     }
 
     bool IsLoginPending(uint32 guidLow)
@@ -300,7 +301,7 @@ namespace
                 Player* connected = ObjectAccessor::FindConnectedPlayer(
                     ObjectGuid::Create<HighGuid::Player>(entry.guid));
                 if (connected && connected->IsInWorld() && connected->GetSession() &&
-                    connected->GetSession()->IsBot())
+                    CbIsBotSession(connected->GetSession()))
                 {
                     NoteRosterBotLoggedIn(entry.guid);
                     continue;
@@ -404,7 +405,7 @@ namespace
         {
             if (!player || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || !player->GetSession()->IsBot())
+            if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
                 continue;
             if (CitizenRosterRegistry::Instance().IsRosterGuid(guid.GetCounter()))
                 continue;
@@ -418,7 +419,7 @@ namespace
         if (_randomLoginComplete)
             return true;
 
-        if (!sPlayerbotAIConfig.randomBotAutologin)
+        if (!CbCfgRandomBotAutologin(sPlayerbotAIConfig))
         {
             _randomLoginComplete = true;
             return true;
@@ -561,7 +562,7 @@ namespace CbCitizenLoginMgr
             Player* player = ObjectAccessor::FindConnectedPlayer(guid);
             if (!player || !player->IsInWorld())
                 continue;
-            if (!player->GetSession() || !player->GetSession()->IsBot())
+            if (!player->GetSession() || !CbIsBotSession(player->GetSession()))
                 continue;
             ++count;
         }
@@ -598,7 +599,7 @@ namespace CbCitizenLoginMgr
         if (!CityBotsRuntime::ContextsRegistered())
             return;
 
-        if (!sPlayerbotAIConfig.enabled || !sPlayerbotAIConfig.randomBotAutologin)
+        if (!CbCfgEnabled(sPlayerbotAIConfig) || !CbCfgRandomBotAutologin(sPlayerbotAIConfig))
             return;
 
         PrepareDedicatedPool();
