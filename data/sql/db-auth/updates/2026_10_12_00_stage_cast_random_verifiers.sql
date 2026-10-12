@@ -1,21 +1,30 @@
--- mod-city-bots: random verifiers for the stage-cast auth accounts (ids 12001-12400).
+-- mod-city-bots: stage-cast auth accounts (ids 12001-12400) with random verifiers.
 --
--- 2026_07_16_03 gave all 400 accounts one shared password, which was published in
--- the module README and in the worldserver log. This file replaces every salt and
--- verifier. Each verifier is for a random password that was generated once, when
--- this file was written, never stored anywhere, and discarded, so no stage-cast
--- account has a password that anyone knows. As shipped, nobody can log in as these
--- accounts: the bots come online through the worldserver, not the login screen.
+-- Creates each stage-cast account that is missing and gives every stage-cast
+-- account a salt and verifier for a random password. The password is generated
+-- once, when this file was written, is never stored and is discarded, so no
+-- password is known for these accounts. The bots come online through the
+-- worldserver, not the login screen.
 --
--- Only citybot rows are touched. Each statement is keyed on the id and on the
--- username compared without case, so a real account on one of these ids, or with
--- one of these names, is skipped. The UPDATE statements never set locked. The
--- INSERT IGNORE statements create a row only where neither the id nor the name is
--- taken, and locked = 0 applies only to a row those statements create.
+-- This is the module's only db-auth file. It replaces 2026_07_16_03, which is
+-- removed: that file gave all 400 accounts one shared password, and its
+-- ON DUPLICATE KEY UPDATE overwrote any real account that held one of these ids
+-- or one of these names.
 --
--- Order matters: on a fresh import 2026_07_16_03 runs first. It still does its
--- ON DUPLICATE KEY UPDATE on ids 12001-12400 at that point, and nothing in this
--- file can undo that.
+-- What it touches: only stage-cast rows. Each statement is keyed on the id and
+-- the username. The account table compares names case-insensitively. A real
+-- account on one of these ids is not changed. A real account with one of these
+-- names on another id is not changed either: the INSERT is skipped because the
+-- name is taken.
+--
+-- Known limit, not fixed here: when a real account holds one of these ids, that
+-- bot gets no account of its own, and 2026_08_22_00 (acore_characters) attaches
+-- the bot's characters to that real account, because it writes the account id
+-- directly. Check a realm for accounts in this range before importing.
+--
+-- The UPDATE statements never set locked. INSERT IGNORE creates a row only where
+-- neither the id nor the name is taken. The value locked = 0 applies only to a
+-- row that those statements create.
 
 -- Step 1: create the missing citybot accounts. Where the id or the name is taken, the row is skipped.
 INSERT IGNORE INTO `account` (`id`, `username`, `salt`, `verifier`, `expansion`, `Locale`, `os`, `recruiter`, `locked`, `online`) VALUES (12001, 'CITYBOT12001', UNHEX('4dbc0cc0f3ea984ec05841c58ce0768bbc2eaf220a10ed46d100ea13f3f8ad84'), UNHEX('b191a5b29e638f6db1eb354cdb183e663c526138ad694768fcd171902a17db2b'), 2, 0, '', 0, 0, 0);

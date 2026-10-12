@@ -79,16 +79,16 @@ This is a playerbots extension, not a standalone NPC module.
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_13_02_city_bot_ambiance.sql
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_15_05_playercreateinfo_human_undead_hunter.sql
 
-   mysql -u acore -p acore_auth < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-auth/updates/2026_07_16_03_stage_cast_one_account_per_bot.sql
    mysql -u acore -p acore_auth < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-auth/updates/2026_10_12_00_stage_cast_random_verifiers.sql
 
    mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_00_stage_cast_characters.sql
    mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_01_stage_cast_outfits.sql
    ```
 
-   The auto-updater applies `2026_10_12_00_stage_cast_random_verifiers.sql` once, like the
-   other files. It replaces the shared password of the 400 stage-cast accounts with random
-   ones and touches no other account.
+   The auto-updater applies `2026_10_12_00_stage_cast_random_verifiers.sql` once. It creates
+   any missing stage-cast account and gives each of the 400 a random, never-stored password
+   verifier. It changes no account whose id and name are not a stage-cast pair. The file's
+   header lists a known limit for a realm that already holds accounts in ids 12001-12400.
 
    Upgrading from an older checkout: the former `db-characters` update chain
    (`2026_07_15_02` through `2026_07_25_02`) is folded into the two files above;

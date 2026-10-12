@@ -11,13 +11,21 @@ each change was needed. All fixes were found and verified on a live server
   worldserver log.** Its verifiers were built with SHA-256 and a different modulus,
   so the password never worked. Correcting that math alone would have made it work
   on every install that imports the SQL. `2026_10_12_00_stage_cast_random_verifiers.sql`
-  gives each account a random salt and a verifier for a random password that is
-  generated once and never stored. Its statements match on id and name, so a real
-  account on one of these ids is skipped. `2026_07_16_03` is not edited, because
-  applied files are not rewritten.
-- The password is gone from the README and from the `CbCitizenAccountMgr` log line.
-  Two applied SQL comments still name it (`2026_07_16_03`, `2026_08_22_00`); they
-  are left as they were.
+  creates any missing stage-cast account and gives each of the 400 a verifier for a
+  random password that is generated once and never stored. It changes no account
+  whose id and name are not a stage-cast pair.
+- `2026_07_16_03_stage_cast_one_account_per_bot.sql` is removed. It carried the shared
+  password and ran `ON DUPLICATE KEY UPDATE ... locked = 0` on ids 12001-12400. On a
+  realm where a real account held one of those ids, or a real account was named
+  `citybot12xxx` on another id, that update replaced the account's password and
+  cleared its lock. An installed copy leaves a `MODULE` row in the `updates` table,
+  which the server neither logs nor removes.
+- The password is gone from the README and the log line. One applied SQL comment still
+  names it (`2026_08_22_00`, line 12). Editing that file would re-run its re-seed on
+  every realm, so it is left as it is.
+- Known limit, not fixed: a real account on one of these ids gets that bot's characters
+  attached, and the module treats that account as a stage-cast account. A range check in
+  the importer is the fix. The file header has the details.
 - `tools/generate_stage_cast.py` is removed. It could not reproduce the shipped
   seeds, and nothing else used it.
 
