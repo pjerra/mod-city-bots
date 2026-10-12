@@ -5,6 +5,22 @@ as deployed in July 2026 and records everything changed since, with the reason
 each change was needed. All fixes were found and verified on a live server
 (~1,500 random playerbots + the 400-bot city cast).
 
+## 2026-10-12 — stage-cast accounts stop sharing a known password
+
+- **The 400 stage-cast accounts shared one password, printed in the README and the
+  worldserver log.** Its verifiers were built with SHA-256 and a different modulus,
+  so the password never worked. Correcting that math alone would have made it work
+  on every install that imports the SQL. `2026_10_12_00_stage_cast_random_verifiers.sql`
+  gives each account a random salt and a verifier for a random password that is
+  generated once and never stored. Its statements match on id and name, so a real
+  account on one of these ids is skipped. `2026_07_16_03` is not edited, because
+  applied files are not rewritten.
+- The password is gone from the README and from the `CbCitizenAccountMgr` log line.
+  Two applied SQL comments still name it (`2026_07_16_03`, `2026_08_22_00`); they
+  are left as they were.
+- `tools/generate_stage_cast.py` is removed. It could not reproduce the shipped
+  seeds, and nothing else used it.
+
 ## 2026-10-11 — builds again on the newer mod-playerbots AzerothCore
 
 - **The module no longer compiled against the current core.** AzerothCore #27533

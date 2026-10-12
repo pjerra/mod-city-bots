@@ -260,7 +260,7 @@ namespace CbCitizenAccountMgr
         }
 
         CbLog::Info("stage cast loaded: {}/{} roster entries | accounts {}-{} | "
-                    "GUIDs {}-{} | password: citybot_stage",
+                    "GUIDs {}-{}",
                     rosterSize, STAGE_CAST_CAPACITY,
                     STAGE_CAST_ACCOUNT_START, STAGE_CAST_ACCOUNT_END - 1,
                     STAGE_CAST_GUID_START, STAGE_CAST_GUID_END - 1);

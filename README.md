@@ -17,7 +17,7 @@ This module is currently built around a deterministic 400-bot roster:
 | --- | --- |
 | Auth accounts | `12001` through `12400` |
 | Auth usernames | `citybot12001` through `citybot12400` |
-| Auth password | `citybot_stage` |
+| Auth password | none known: random per account, never stored |
 | Character GUIDs | `9000001` through `9000400` |
 | Roster table | `acore_playerbots.citizen_roster` |
 
@@ -80,10 +80,15 @@ This is a playerbots extension, not a standalone NPC module.
    mysql -u acore -p acore_world < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-world/updates/2026_07_15_05_playercreateinfo_human_undead_hunter.sql
 
    mysql -u acore -p acore_auth < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-auth/updates/2026_07_16_03_stage_cast_one_account_per_bot.sql
+   mysql -u acore -p acore_auth < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-auth/updates/2026_10_12_00_stage_cast_random_verifiers.sql
 
    mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_00_stage_cast_characters.sql
    mysql -u acore -p acore_characters < ~/azerothcore-wotlk/modules/mod-city-bots/data/sql/db-characters/updates/2026_08_22_01_stage_cast_outfits.sql
    ```
+
+   The auto-updater applies `2026_10_12_00_stage_cast_random_verifiers.sql` once, like the
+   other files. It replaces the shared password of the 400 stage-cast accounts with random
+   ones and touches no other account.
 
    Upgrading from an older checkout: the former `db-characters` update chain
    (`2026_07_15_02` through `2026_07_25_02`) is folded into the two files above;
@@ -277,7 +282,7 @@ changed and you know how your `updates` table tracks it.
 | `city_bot_poi` does not exist | Apply all `db-world` SQL updates |
 | `citizen_roster table empty or missing` | Import `data/sql/playerbots/updates/2026_07_15_00_citizen_roster.sql` into `acore_playerbots` by hand (never auto-applied), then restart |
 | `N stage cast characters missing` | Apply all `db-characters` SQL updates |
-| Citybot accounts cannot log in | Apply all `db-auth` SQL updates |
+| Citybot accounts refuse every password | Expected. Their passwords are random and never stored; the bots log in through the worldserver, not the login screen |
 | City bots start before random bots finish | Confirm current config has dedicated stage-cast mode and rebuild with this module |
 | Stage cast stalls under very heavy random-bot load | Increase `CharacterDatabase.WorkerThreads` in `worldserver.conf` |
 | Server freezes from citybot chatter | Keep `CitizenBots.EnableSay = 0` and `CitizenBots.RandomSayChance = 0` |
@@ -287,14 +292,9 @@ changed and you know how your `updates` table tracks it.
 
 ## Development
 
-`tools/generate_stage_cast.py` is the historical generator of the V2 identity
-data (accounts, roster, character skeleton). It writes to `tools/out/` only and
-does **not** produce the shipped seeds: `data/sql/db-characters/updates/*` are
-dumps of the final database state, and `data/sql/playerbots/updates/
-2026_07_15_00_citizen_roster.sql` has been edited by hand since. Never copy its
-output into `data/sql/*/updates` without re-running a fresh-install check (AC
-updater order: auth, characters, world, then playerbots by hand). The server
-does not run Python files from this module.
+The SQL under `data/sql` is the install state. Add a new numbered file for each
+change, and do not edit a file a server may already have applied. There is no
+generator for the stage-cast seed data.
 
 ## TODO
 
